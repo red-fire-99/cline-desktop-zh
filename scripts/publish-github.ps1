@@ -10,7 +10,14 @@
 #  不会把 Token 写入任何文件或 .git/config
 # ============================================================
 param(
-  [switch]$SelfTest
+  [switch]$SelfTest,
+  [switch]$TokenOnly,     # 跳过所有提问：直接要 Token -> 建仓库 -> 推送
+  [switch]$PrepareOnly,   # 只做检查/身份设置/信息收集，不推送
+  [string]$User,          # 预填: GitHub 用户名
+  [string]$RepoName,      # 预填: 仓库名
+  [string]$Email,         # 预填: 提交邮箱
+  [string]$DisplayName,   # 预填: 提交昵称
+  [string]$Visibility = 'public'
 )
 
 $ErrorActionPreference = 'Stop'
@@ -113,7 +120,22 @@ $curName = Invoke-Git @('config', 'user.name') -AllowFail | Select-Object -First
 $curMail = Invoke-Git @('config', 'user.email') -AllowFail | Select-Object -First 1
 $isPlaceholder = (-not $curName) -or ($curName -eq 'cline-desktop-zh')
 Write-Host ("当前身份: {0} <{1}>" -f ($(if ($curName) { $curName } else { '(未设置)' })), ($(if ($curMail) { $curMail } else { '(未设置)' })))
-if ($isPlaceholder) {
+# 预填了邮箱就自动设置身份，并把历史提交作者统一成该身份（未推送前可安全改写）
+$presetIdentity = $false
+if ($Email) {
+  $presetIdentity = $true
+  if (-not $DisplayName) { $DisplayName = $User }
+  Invoke-Git @('config', '--local', 'user.name', $DisplayName) | Out-Null
+  Invoke-Git @('config', '--local', 'user.email', $Email) | Out-Null
+  Write-Host ('已设置提交身份: ' + $DisplayName + ' <' + $Email + '>') -ForegroundColor Green
+  $authors = Invoke-Git @('log', '--pretty=%ae') -AllowFail | Select-Object -Unique
+  if (@($authors | Where-Object { $_ -ne $Email }).Count -gt 0) {
+    Write-Host '正在把历史提交作者统一为该身份 ...'
+    Invoke-Git @('rebase', '--root', '--exec', 'git commit --amend --reset-author --no-edit') -AllowFail | Out-Null
+    Write-Host '历史作者已统一。' -ForegroundColor Green
+  }
+}
+if ((-not $presetIdentity) -and $isPlaceholder) {
   Write-Host '这是占位身份，建议改成你自己的（会显示在提交记录里）。' -ForegroundColor Yellow
   $name = Ask '你的名字/昵称' $env:USERNAME
   $email = Ask '你的邮箱（GitHub 账号邮箱即可）' ''
@@ -133,14 +155,23 @@ if ($isPlaceholder) {
 # ============================================================
 Write-Host ''
 Write-Host '=== 第 3 步 / 仓库信息 ===' -ForegroundColor Cyan
-$ghUser = Ask '你的 GitHub 用户名（例如 octocat）' ''
+$ghUser = if ($User) { $User } else { Ask '你的 GitHub 用户名（例如 octocat）' '' }
 if (-not $ghUser) { Write-Host '缺少用户名，已取消。' -ForegroundColor Red; exit 1 }
-$repoName = Ask '仓库名' 'cline-desktop-zh'
-$desc = Ask '仓库简介' 'Cline 桌面版（Windows）中文界面工具：运行时注入词典翻译，不修改官方文件，自动更新不受影响'
-$vis = Ask '可见性：public=公开 / private=私有' 'public'
-$isPrivate = ($vis -match 'private|私有|priv')
+$repoName = if ($RepoName) { $RepoName } else { Ask '仓库名' 'cline-desktop-zh' }
+$desc = 'Cline 桌面版（Windows）中文界面工具：运行时注入词典翻译，不修改官方文件，自动更新不受影响'
+$isPrivate = ($Visibility -match 'private|私有|priv')
+Write-Host ('  用户名: ' + $ghUser + '   仓库名: ' + $repoName + '   可见性: ' + $(if ($isPrivate) { '私有' } else { '公开' }))
 $repoUrl = "https://github.com/$ghUser/$repoName"
 $remote = "https://github.com/$ghUser/$repoName.git"
+
+if ($PrepareOnly) {
+  Write-Host ''
+  Write-Host '✔ 准备工作完成（未推送任何内容）。' -ForegroundColor Green
+  Write-Host ('  目标仓库: ' + $repoUrl)
+  Write-Host '  下一步: 双击 launcher\finish-publish.cmd 粘贴 Token 即可自动建仓库并推送；'
+  Write-Host '          或双击 launcher\publish-github.cmd 走完整向导。'
+  exit 0
+}
 # ============================================================
 #  第 4 步: 在 GitHub 上创建远程仓库
 # ============================================================
@@ -155,7 +186,7 @@ Write-Host '方式 B：自己在网页建仓库 —— 打开下面的地址点 
 Write-Host '        注意不要勾选 README / .gitignore / license（本地已经有了）。'
 Write-Host ''
 Write-Host ("  " + $repoUrl + '/new?name=' + $repoName) -ForegroundColor Yellow
-$ans = Ask '选 A 还是 B？(A/B)' 'B'
+$ans = if ($TokenOnly) { 'A' } else { Ask '选 A 还是 B？(A/B)' 'B' }
 if ($ans -match '^[aA]') {
   $sec = Read-Host '粘贴 Token（输入不可见，直接粘贴后回车）' -AsSecureString
   $token = [System.Net.NetworkCredential]::new('', $sec).Password
