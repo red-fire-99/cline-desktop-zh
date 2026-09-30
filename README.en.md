@@ -13,11 +13,16 @@
 
 Grab the latest archive from [Releases](../../releases):
 
-- `cline-desktop-zh-*-full.zip` — includes a portable Node.js runtime (~40 MB), works offline after unzip
-- `cline-desktop-zh-*-slim.zip` — no Node.js (~250 KB), the installer downloads it for you
+- `cline-desktop-zh-v*-slim.zip` — full source + dictionary (2097 entries), ~145 KB
 
-Then unzip anywhere writable and double-click **`launcher\cline-zh.vbs`**
-(or run `launcher\setup.cmd` first on the slim package). A “Cline 中文版” desktop shortcut is created for you.
+**About Node.js**: the injector runs on Node.js. You do **not** need to install it — `launcher\setup.cmd`
+downloads a portable copy into the tool folder (nodejs.org, falling back to the npmmirror mirror), with no
+admin rights and no registry changes. If your network blocks that, download
+[Node.js LTS](https://nodejs.org/dist/) (`node-vXX-win-x64.zip`) and drop its `node` folder next to
+`launcher\` for fully offline use.
+
+Then unzip anywhere writable, double-click **`launcher\setup.cmd`**, and launch Cline with the created
+“Cline 中文版” desktop shortcut.
 
 
 - 🚀 **One-step install**: double-click `launcher\setup.cmd` — it downloads a portable Node.js

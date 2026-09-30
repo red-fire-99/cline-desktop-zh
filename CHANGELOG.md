@@ -6,9 +6,8 @@
 
 首个版本：Cline 桌面版（Windows）运行时中文界面工具。
 
-**下载**：GitHub Release 提供两个压缩包
-- `cline-desktop-zh-v1.0.0-full.zip`：含便携 Node.js（约 40MB），解压即用、可离线
-- `cline-desktop-zh-v1.0.0-slim.zip`：不含 Node.js（约 250KB），首次运行自动下载
+**下载**：GitHub Release 提供 `cline-desktop-zh-v1.0.0-slim.zip`（约 145 KB，含全部代码与 2097 条词典）。
+首次运行 `launcher\setup.cmd` 会自动下载便携 Node.js（nodejs.org，失败回退 npmmirror），无需管理员权限。
 
 **功能**
 

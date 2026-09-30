@@ -10,15 +10,16 @@
 
 ## 下载与安装
 
-**方式一（推荐）：下载发行版压缩包**
+**方式一：下载发行版压缩包（推荐）**
 
-1. 打开 [Releases](../../releases) 页面，下载最新的 `cline-desktop-zh-*-full.zip`（含便携 Node，约 40MB，解压即用）
-   或 `cline-desktop-zh-*-slim.zip`（不含 Node，约 250KB，需联网自动下载 Node）
+1. 打开 [Releases](../../releases) 页面，下载 `cline-desktop-zh-v*-slim.zip`（约 145 KB，含全部代码与词典）
 2. 解压到任意可写目录
-3. 双击 **`launcher\setup.cmd`**（full 版可跳过，直接双击桌面快捷方式或 `launcher\cline-zh.vbs`）
+3. 双击 **`launcher\setup.cmd`** —— 自动下载便携 Node.js（约 40MB，来自 nodejs.org，失败自动回退 npmmirror 镜像）并创建桌面快捷方式
 4. 桌面出现 **「Cline 中文版」** 快捷方式，双击即用中文界面启动 Cline
 
-> 网络较慢时，`setup.cmd` 会自动从 nodejs.org 下载 Node，失败时自动回退到 npmmirror 镜像。
+> **需要 Node.js 吗？** 需要（用它运行注入器），但不必自己安装：`setup.cmd` 会下载便携版到本工具目录，
+> **不需要管理员权限、不写注册表**。若你的网络无法自动下载，也可手动下载
+> [Node.js LTS](https://nodejs.org/dist/) 的 `node-vXX-win-x64.zip`，解压后把里面的 `node` 文件夹放到本工具目录下即可离线使用。
 
 **方式二：从源码运行（开发者）**
 
