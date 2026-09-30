@@ -117,21 +117,19 @@ After an update, do this 2-minute check:
 | A few new English strings | New copy in the new version | `launcher\find-missing.cmd` → add to `dict\overrides.json` → `launcher\hot-apply-dict.cmd` |
 | Report says “translator not mounted” | Not started via the launcher, or Cline changed UI framework | Launch via the shortcut; check `logs\injector.err.log` |
 
-## Publishing to GitHub (guided)
+## Publishing this repository (maintainers)
 
-1. Double-click `launcher\publish-github.cmd`.
-2. Answer four questions (all have defaults — just press Enter): your name/e-mail, your GitHub username,
-   repository name (default `cline-desktop-zh`), public or private.
-3. Choose how the remote repository is created:
-   - **A (recommended, fully automatic)** — open <https://github.com/settings/tokens/new>, set an expiry,
-     tick **repo**, generate the token, paste it back (input is hidden). The script creates the repo and pushes.
-   - **B** — the script opens the “new repository” page; click **Create repository** and do **not** tick
-     README / .gitignore / license. Return and press Enter.
-4. You should see `✔ 发布成功！` with your repository URL.
+The publishing tooling is generic (not Cline-specific) and now lives in its own project,
+**git-publish-wizard** — a guided “double-click and answer a few questions” publisher for any local git
+repository, including a GitHub API channel for networks where `github.com` is unreachable.
 
-The token is used once in memory and is never written to disk or `.git/config`.
-Run `powershell -File scripts\publish-github.ps1 -SelfTest` first to verify the git plumbing offline.
-Re-run `launcher\publish-github.cmd` any time you want to push updates.
+```powershell
+# publish this repository
+powershell -File <git-publish-wizard>\publish-github.ps1 -RepoDir <this repo>
+
+# network-restricted alternative (identical commit SHAs)
+powershell -File <git-publish-wizard>\publish-github-api.ps1 -RepoDir <this repo>
+```
 
 ## Disclaimer & License
 

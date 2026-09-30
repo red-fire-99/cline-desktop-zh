@@ -63,8 +63,6 @@ powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\setup.ps1
 | 改完词典立即生效 | `launcher\hot-apply-dict.cmd`（无需重启） |
 | 重新合并词典 | `launcher\fetch-sources.cmd` → `launcher\rebuild-dict.cmd` |
 | 关闭后台注入器 | `launcher\stop-injector.cmd` |
-| 发布/更新到 GitHub | `launcher\publish-github.cmd`（向导式，见下文） |
-| 网络受限时的发布 | `launcher\publish-github-api.cmd`（走 API 通道，见下文） |
 
 日志位置：`logs\injector.out.log` / `logs\injector.err.log`。
 
@@ -81,7 +79,6 @@ powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\setup.ps1
 │   ├─ hot-apply-dict.cmd    #   词典热更新（无需重启）
 │   ├─ rebuild-dict.cmd      #   重新合并词典
 │   ├─ fetch-sources.cmd     #   下载词典来源到 vendor/
-│   ├─ publish-github.cmd    #   向导式一键发布到 GitHub
 │   ├─ create-shortcuts.cmd  #   重新创建快捷方式
 │   └─ stop-injector.cmd     #   结束后台注入器
 ├─ scripts/                  # PowerShell 实现
@@ -90,7 +87,6 @@ powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\setup.ps1
 │   ├─ fetch-sources.ps1     #   下载词典来源
 │   ├─ create-shortcuts.ps1  #   创建桌面 / 开始菜单快捷方式
 │   ├─ status.ps1            #   状态检查
-│   ├─ publish-github.ps1    #   一键发布到 GitHub（-SelfTest 可离线自检）
 │   └─ stop-injector.ps1     #   结束后台注入器
 ├─ tools/                    # Node 工具（注入器 / 翻译脚本 / 词典维护）
 │   ├─ cline-zh.mjs          #   注入器：run / dump / verify / kill
@@ -184,36 +180,20 @@ launcher\status.cmd
 
 想提前验证，也可以在开发环境跑一次自测（不开 Cline）：`powershell -File .\test\e2e.ps1`。
 
-## 发布到 GitHub（傻瓜向导）
+## 维护者：如何发布本仓库
 
-**第 1 步：双击** `launcher\publish-github.cmd`
+发布工具与 Cline 汉化无关，已抽成独立的通用工具 **git-publish-wizard**（面向任意本地 git 仓库的
+「双击 + 回答几个问题」发布向导，网络受限时还有 GitHub API 通道），因此不再放在本仓库里。
 
-**第 2 步：照着回答问题**（每个都有默认值，直接按回车就行）
+```powershell
+# 1) 用通用向导发布本仓库（把路径换成你机器上的实际位置）
+powershell -File <git-publish-wizard>\publish-github.ps1 -RepoDir <本仓库目录>
 
-1. 你的名字/昵称、邮箱 → 决定提交记录里显示的作者
-2. 你的 GitHub 用户名
-3. 仓库名（默认 `cline-desktop-zh`）
-4. 公开 `public` / 私有 `private`
+# 2) 网络受限（github.com:443 不通）时改用 API 通道，commit SHA 与本地完全一致
+powershell -File <git-publish-wizard>\publish-github-api.ps1 -RepoDir <本仓库目录>
+```
 
-**第 3 步：选 A 或 B 决定怎么建远程仓库**
-
-- **方式 A（推荐，全自动）**
-  1. 浏览器打开 <https://github.com/settings/tokens/new>
-  2. Note 随便填，Expiration 选 30 days，勾选 **repo**，点 Generate token
-  3. 复制那串 token（只显示一次），粘贴回窗口（屏幕不显示字符是正常的，直接粘贴 + 回车）
-  → 脚本自动建好仓库并推送完成
-- **方式 B（不想用 token）**
-  脚本会打开 `https://github.com/<你的用户名>/cline-desktop-zh/new` 页面，你点 **Create repository**，
-  **注意不要勾选** README / .gitignore / license（本地已经有了，否则会冲突），回来按回车继续
-
-**第 4 步：** 看到 `✔ 发布成功！` 和仓库地址，浏览器打开即可。
-
-几个说明：
-
-- 建议发布前先跑一次本地自检：`powershell -File scripts\publish-github.ps1 -SelfTest`（不联网，验证 git 链路）
-- Token 只在内存里用一次，**不会**写进任何文件或 `.git/config`
-- 以后改了内容要更新仓库？再双击一次 `launcher\publish-github.cmd` 就行
-- 仍然想手动敲命令的话：
+网络正常时也可以手动推送：
 
 ```powershell
 git config user.name "你的名字"; git config user.email "你的邮箱"
@@ -221,32 +201,17 @@ git remote add origin https://github.com/<用户名>/cline-desktop-zh.git
 git push -u origin main
 ```
 
-发布后建议顺手做的三件事：在仓库 **About** 里填简介并勾选 Topics
-（`cline` `chinese` `localization` `i18n` `zh-cn` `windows` `webview2` `cdp`）；
-把 README 里的项目名按你的仓库地址微调；给代码补一个星标或写点使用说明。
+### 网络受限时的发布原理（供有需要的维护者参考）
 
-### 网络受限（github.com 连不通）时怎么发布？
+GitHub 的 git 通道（`github.com`）与 API 通道（`api.github.com`）是两套独立入口，国内常常只有后者可用。
+用 Git Data API 依次创建 `blob` → `tree` → `commit` → 分支引用，只要用**与本地 git 完全相同的内容、
+作者时间与时区**构造对象，算出的对象哈希就与本地一致，因此网络恢复后仍可正常 `fetch / pull / push`。
 
-如果 `git push` 卡住或超时（国内网络常见：`github.com:443` 不通，但 `api.github.com` 可通），
-改用 API 通道发布：
 
-- 双击 **`launcher\publish-github-api.cmd`**，粘贴一次 Token 即可；
-- 它会自动完成：检查网络 →（必要时）创建仓库与占位提交 → 设置 Topics/简介 →
-  通过 Git Data API 同步 blob / tree / commit / 分支引用；
-- 生成的 **commit SHA 与本地完全一致**，所以网络恢复后可以正常 `git fetch / pull / push`，
-  不会出现「历史分叉、只能强推」的麻烦；
-- 底层脚本是 `tools\publish-via-api.mjs`，也可以手动用：
-
-```powershell
-$env:GITHUB_TOKEN = 'ghp_xxx'
-node tools\publish-via-api.mjs --repo <用户名>/<仓库名> [--branch main] [--dry-run]
-```
-
-> 原理：GitHub 的 Git Data API（`api.github.com`）与 git 通道（`github.com`）是两套独立入口，
-> 前者在国内往往可用。用同一份内容、同一份作者时间与时区构造对象，算出来的对象哈希与本地 git 完全相同。
+发布后建议顺手做的两件事：在仓库 **About** 里填简介并勾选 Topics
+（`cline` `chinese` `localization` `i18n` `zh-cn` `windows` `webview2` `cdp`）；补一点使用说明或截图。
 
 ## 免责声明与许可
-
 本项目为社区非官方项目，与 Cline 官方（[cline.bot](https://cline.bot)）无隶属关系；
 不分发、不修改官方程序文件，仅通过本机调试通道在运行时替换界面文本。
 本项目以 **MIT** 许可发布，上游来源与许可证见 [NOTICE.md](NOTICE.md) 与 `licenses/`。
