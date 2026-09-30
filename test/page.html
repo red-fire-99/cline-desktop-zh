@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><title>Cline ZH injection test page</title></head>
+<body>
+<div id="app">
+  <button id="btn-new">New Session</button>
+  <div id="title">Settings</div>
+  <div id="count">3 configured · 12 available</div>
+  <input id="search" placeholder="Search sessions">
+  <span id="del" title="Delete session" aria-label="Delete session">x</span>
+  <pre><code id="code">const settings = "Settings"; // 代码块不应被翻译</code></pre>
+  <textarea id="ta" placeholder="Ask anything"></textarea>
+  <div id="dyn"></div>
+</div>
+<script>
+  // 动态插入 + 属性变更, 用于验证 MutationObserver 增量翻译
+  setTimeout(function () {
+    var d = document.createElement('div');
+    d.id = 'dyn-text';
+    d.textContent = 'Loading models...';
+    document.getElementById('dyn').appendChild(d);
+    var s = document.createElement('span');
+    s.id = 'dyn-attr';
+    s.setAttribute('aria-label', 'Loading providers...');
+    s.textContent = '';
+    document.getElementById('dyn').appendChild(s);
+  }, 400);
+</script>
+</body>
+</html>

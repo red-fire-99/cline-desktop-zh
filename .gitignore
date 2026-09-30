@@ -1,0 +1,19 @@
+# 运行时环境与生成物（不入库）
+node/
+vendor/
+logs/
+tools/out/
+_dev/
+*.log
+*.log.err
+*.err
+*.pid
+dict/build-stats.txt
+
+# 编辑器 / 系统
+.vscode/
+.idea/
+Thumbs.db
+Desktop.ini
+*.tmp
+*.bak

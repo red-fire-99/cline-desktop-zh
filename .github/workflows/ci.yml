@@ -1,0 +1,20 @@
+name: ci
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: 仓库自检（词典 / 脚本语法 / 关键文件）
+        run: node tools/validate.mjs
+      - name: 校验 JSON 文件可解析
+        run: |
+          node -e "for (const f of ['config.json','dict/zh-cn.json']) { JSON.parse(require('fs').readFileSync(f,'utf8')); console.log(f, 'OK'); }"

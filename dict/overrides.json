@@ -1,0 +1,14 @@
+{
+  "Read 1 file": "读取 1 个文件",
+  "^Read (\\d+) files$": "读取 $1 个文件",
+  "^Running (\\d+) commands$": "正在执行 $1 条命令",
+  "^Ran (\\d+) commands$": "执行了 $1 条命令",
+  "^Running (\\d+) tools$": "正在运行 $1 个工具",
+  "^Edited (\\d+) files$": "编辑了 $1 个文件",
+  "^Created (\\d+) files$": "创建了 $1 个文件",
+  "^Searched (\\d+) files$": "搜索了 $1 个文件",
+  "^Wrote (\\d+) files$": "写入了 $1 个文件",
+  "^Thought for (\\d+)s$": "思考了 $1 秒",
+  "^Launching browser\\.\\.\\.$": "正在启动浏览器...",
+  "^Running command\\.\\.\\.$": "正在执行命令..."
+}
