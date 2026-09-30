@@ -64,7 +64,7 @@ for (const f of readdirSync(toolsDir).filter((x) => x.endsWith('.mjs'))) {
 }
 
 // ---------- 3) 关键文件 ----------
-for (const f of ['config.json', 'launcher/cline-zh.vbs', 'scripts/setup.ps1', 'tools/translator.js', 'tools/cline-zh.mjs']) {
+for (const f of ['config.json', 'CONTRIBUTING.md', 'launcher/cline-zh.vbs', 'scripts/setup.ps1', 'tools/translator.js', 'tools/cline-zh.mjs']) {
   if (existsSync(join(ROOT, f))) ok(`存在 ${f}`);
   else errors.push(`缺少文件: ${f}`);
 }

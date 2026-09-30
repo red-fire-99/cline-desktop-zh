@@ -138,19 +138,17 @@ After an update, do this 2-minute check:
 | A few new English strings | New copy in the new version | `launcher\find-missing.cmd` → add to `dict\overrides.json` → `launcher\hot-apply-dict.cmd` |
 | Report says “translator not mounted” | Not started via the launcher, or Cline changed UI framework | Launch via the shortcut; check `logs\injector.err.log` |
 
-## Publishing this repository (maintainers)
+## Contributing
 
-The publishing tooling is generic (not Cline-specific) and now lives in its own project,
-**git-publish-wizard** — a guided “double-click and answer a few questions” publisher for any local git
-repository, including a GitHub API channel for networks where `github.com` is unreachable.
+The most valuable contribution is **dictionary entries** — no coding required:
 
-```powershell
-# publish this repository
-powershell -File <git-publish-wizard>\publish-github.ps1 -RepoDir <this repo>
+1. Find untranslated UI text in Cline and run `launcher\find-missing.cmd` to capture the list.
+2. Post it as an Issue, or edit `dict/overrides.json` and open a PR.
+3. Once merged, your translations ship to everyone in the next release.
 
-# network-restricted alternative (identical commit SHAs)
-powershell -File <git-publish-wizard>\publish-github-api.ps1 -RepoDir <this repo>
-```
+Code contributions (launcher, tooling, tests, docs) are welcome too — see
+[CONTRIBUTING.md](CONTRIBUTING.md). Questions can go to
+[Discussions](https://github.com/red-fire-99/cline-desktop-zh/discussions).
 
 ## Disclaimer & License
 

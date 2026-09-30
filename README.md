@@ -199,36 +199,16 @@ launcher\status.cmd
 
 想提前验证，也可以在开发环境跑一次自测（不开 Cline）：`powershell -File .\test\e2e.ps1`。
 
-## 维护者：如何发布本仓库
+## 参与贡献
 
-发布工具与 Cline 汉化无关，已抽成独立的通用工具 **git-publish-wizard**（面向任意本地 git 仓库的
-「双击 + 回答几个问题」发布向导，网络受限时还有 GitHub API 通道），因此不再放在本仓库里。
+欢迎贡献，**最常见的贡献方式是补词典**（不需要懂代码）：
 
-```powershell
-# 1) 用通用向导发布本仓库（把路径换成你机器上的实际位置）
-powershell -File <git-publish-wizard>\publish-github.ps1 -RepoDir <本仓库目录>
+1. 在 Cline 里找到没翻译的界面，运行 `launcher\find-missing.cmd` 抓取清单；
+2. 把清单发成 Issue，或直接改 `dict\overrides.json` 提 PR；
+3. 维护者合并后，你的译文就会随下一版发到所有人。
 
-# 2) 网络受限（github.com:443 不通）时改用 API 通道，commit SHA 与本地完全一致
-powershell -File <git-publish-wizard>\publish-github-api.ps1 -RepoDir <本仓库目录>
-```
-
-网络正常时也可以手动推送：
-
-```powershell
-git config user.name "你的名字"; git config user.email "你的邮箱"
-git remote add origin https://github.com/<用户名>/cline-desktop-zh.git
-git push -u origin main
-```
-
-### 网络受限时的发布原理（供有需要的维护者参考）
-
-GitHub 的 git 通道（`github.com`）与 API 通道（`api.github.com`）是两套独立入口，国内常常只有后者可用。
-用 Git Data API 依次创建 `blob` → `tree` → `commit` → 分支引用，只要用**与本地 git 完全相同的内容、
-作者时间与时区**构造对象，算出的对象哈希就与本地一致，因此网络恢复后仍可正常 `fetch / pull / push`。
-
-
-发布后建议顺手做的两件事：在仓库 **About** 里填简介并勾选 Topics
-（`cline` `chinese` `localization` `i18n` `zh-cn` `windows` `webview2` `cdp`）；补一点使用说明或截图。
+其他贡献方式（改启动器、加自测、改进文档）见 [CONTRIBUTING.md](CONTRIBUTING.md)；
+有问题也可以直接在 [Discussions](https://github.com/red-fire-99/cline-desktop-zh/discussions) 提问。
 
 ## 免责声明与许可
 本项目为社区非官方项目，与 Cline 官方（[cline.bot](https://cline.bot)）无隶属关系；
