@@ -1,9 +1,33 @@
-# Cline 桌面版中文界面 · cline-desktop-zh
+# Cline 桌面版中文界面 · Cline Desktop 汉化版 / 中文版 (zh-CN)
 
-> 给官方 **Cline 桌面版**（Windows，Tauri + WebView2）加上中文界面。
-> 通过本机 CDP 调试通道在**运行时**替换界面文案 —— **不修改任何官方文件**，官方自动更新不受影响。
+> **Cline 汉化 · Cline 中文版 · Cline Chinese UI** —— 给官方 **Cline 桌面版**（Cline Desktop，Windows，Tauri + WebView2）
+> 加上简体中文界面。通过本机 CDP 调试通道在**运行时**替换界面文案 —— **不修改任何官方文件**，官方自动更新不受影响。
+>
+> 搜索关键词：Cline 汉化、Cline 中文版、Cline 中文化、Cline 简体中文界面、Cline Chinese、Cline zh-CN、
+> Cline Desktop 中文、Cline 本地化、Cline 翻译、Cline Chinese UI、Cline 词典翻译、Cline 界面汉化
 
 [English](README.en.md) | 简体中文
+
+## 下载与安装
+
+**方式一（推荐）：下载发行版压缩包**
+
+1. 打开 [Releases](../../releases) 页面，下载最新的 `cline-desktop-zh-*-full.zip`（含便携 Node，约 40MB，解压即用）
+   或 `cline-desktop-zh-*-slim.zip`（不含 Node，约 250KB，需联网自动下载 Node）
+2. 解压到任意可写目录
+3. 双击 **`launcher\setup.cmd`**（full 版可跳过，直接双击桌面快捷方式或 `launcher\cline-zh.vbs`）
+4. 桌面出现 **「Cline 中文版」** 快捷方式，双击即用中文界面启动 Cline
+
+> 网络较慢时，`setup.cmd` 会自动从 nodejs.org 下载 Node，失败时自动回退到 npmmirror 镜像。
+
+**方式二：从源码运行（开发者）**
+
+```bash
+git clone https://github.com/red-fire-99/cline-desktop-zh.git
+cd cline-desktop-zh
+powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\setup.ps1
+```
+
 
 - 🚀 **安装一步到位**：双击 `launcher\setup.cmd`，自动下载便携版 Node.js（不需要管理员权限、不写注册表）
 - 🌏 **词典 2097 条**（精确 2010 + 正则 87），由 4 个开源汉化项目的词典合并去重而来（见 [NOTICE.md](NOTICE.md)），并可用 `dict/overrides.json` 自行覆盖
@@ -36,20 +60,14 @@
 
 ## 安装
 
-### 方式一：一键安装（推荐）
-
-1. 下载本仓库（`git clone`，或 Download ZIP 后解压到任意可写目录）；
-2. 双击 **`launcher\setup.cmd`** —— 自动下载便携 Node.js（约 40MB，来自 nodejs.org，失败自动回退 npmmirror 镜像）并创建快捷方式；
-3. 桌面出现 **「Cline 中文版」** 快捷方式，双击即可用中文界面启动 Cline。
-
-> 若 Cline 正在以英文模式运行，启动器会弹窗询问是否关闭并重新以中文模式启动。
-
-### 方式二：手动
+安装步骤见上文「[下载与安装](#下载与安装)」。如果是从源码运行：
 
 ```powershell
 powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\setup.ps1
 # 之后每次启动：wscript .\launcher\cline-zh.vbs   （或直接双击该 vbs）
 ```
+
+> 若 Cline 正在以英文模式运行，启动器会弹窗询问是否关闭并重新以中文模式启动。
 
 ## 日常使用
 

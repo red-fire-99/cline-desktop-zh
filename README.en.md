@@ -1,8 +1,24 @@
-# Cline Desktop ZH — Chinese UI for Cline Desktop (unofficial)
+# Cline Desktop ZH — Chinese / 中文版 / 汉化 for Cline Desktop
 
-> Adds a **Chinese interface** to the official **Cline Desktop** app (Windows, Tauri + WebView2).
-> It translates the UI at **runtime** through the local WebView2 debugging channel —
-> **no official file is modified**, so Cline's auto-update keeps working.
+> **Cline 汉化 · Cline 中文版 · Cline Chinese UI** — adds a **Simplified Chinese (zh-CN) interface** to the
+> official **Cline Desktop** app on Windows (Tauri + WebView2). Translations are applied **at runtime** through
+> the local WebView2 debugging channel — **no official file is modified**, so Cline's auto-update keeps working.
+>
+> Search keywords: Cline Chinese, Cline zh-CN, Cline 汉化, Cline 中文版, Cline 中文化, Cline Chinese UI,
+> Cline Desktop Chinese, Cline localization, Cline translation
+
+[简体中文](README.md) | English
+
+## Download
+
+Grab the latest archive from [Releases](../../releases):
+
+- `cline-desktop-zh-*-full.zip` — includes a portable Node.js runtime (~40 MB), works offline after unzip
+- `cline-desktop-zh-*-slim.zip` — no Node.js (~250 KB), the installer downloads it for you
+
+Then unzip anywhere writable and double-click **`launcher\cline-zh.vbs`**
+(or run `launcher\setup.cmd` first on the slim package). A “Cline 中文版” desktop shortcut is created for you.
+
 
 - 🚀 **One-step install**: double-click `launcher\setup.cmd` — it downloads a portable Node.js
   (no admin rights, nothing written to the registry).
