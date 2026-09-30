@@ -57,20 +57,51 @@ async function api(method, url, body) {
   }
 }
 
-// ---------- 读取本地 git 对象 ----------
+// ---------- 读取本地 git 对象（按原始 commit 对象精确复刻，保证 SHA 一致） ----------
 const branch = opt('branch', 'main');
-const log = git('log', '--reverse', '--pretty=%H%x1f%s%x1f%an%x1f%ae%x1f%aI%x1f%cn%x1f%ce%x1f%cI%x1f%P', branch)
-  .split('\n').filter(Boolean);
+const commitShas = git('log', '--reverse', '--pretty=%H', branch).split('\n').filter(Boolean);
+
+function gitDateToIso(ts, tz) {
+  const sign = tz[0] === '-' ? -1 : 1;
+  const offMin = sign * (Number(tz.slice(1, 3)) * 60 + Number(tz.slice(3, 5)));
+  const iso = new Date((Number(ts) + offMin * 60) * 1000).toISOString().replace('Z', '');
+  const tzs = (offMin >= 0 ? '+' : '-') +
+    String(Math.floor(Math.abs(offMin) / 60)).padStart(2, '0') + ':' +
+    String(Math.abs(offMin) % 60).padStart(2, '0');
+  return iso.slice(0, 19) + tzs;
+}
+
+function parseIdent(s) {
+  const m = s.match(/^(.*) <([^>]*)> (\d+) ([+-]\d{4})$/);
+  if (!m) throw new Error('无法解析 git 身份行: ' + s);
+  return { name: m[1], email: m[2], date: gitDateToIso(m[3], m[4]) };
+}
+
+function parseCommit(sha) {
+  const raw = execFileSync(GIT_EXE, ['-C', ROOT, 'cat-file', 'commit', sha], {
+    encoding: 'utf8', maxBuffer: 32 * 1024 * 1024,
+  });
+  const sep = raw.indexOf('\n\n');
+  const out = { message: raw.slice(sep + 2), parents: [] };
+  for (const line of raw.slice(0, sep).split('\n')) {
+    if (line.startsWith('tree ')) out.tree = line.slice(5).trim();
+    else if (line.startsWith('parent ')) out.parents.push(line.slice(7).trim());
+    else if (line.startsWith('author ')) out.author = parseIdent(line.slice(7));
+    else if (line.startsWith('committer ')) out.committer = parseIdent(line.slice(10));
+  }
+  return out;
+}
+
+const commits = commitShas.map((sha) => ({ sha, ...parseCommit(sha) }));
 
 console.log(`仓库: ${owner}/${repo}`);
-console.log(`分支: ${branch}   提交数: ${log.length}   git: ${GIT_EXE}`);
+console.log(`分支: ${branch}   提交数: ${commits.length}   git: ${GIT_EXE}`);
 if (DRY) console.log('dry-run: 只列出计划，不调用 API');
 
 // ---------- 1) 上传所有 blob（按内容去重） ----------
 const blobCache = new Map();
-for (const line of log) {
-  const sha = line.split('\x1f')[0];
-  for (const e of git('ls-tree', '-r', sha).split('\n').filter(Boolean)) {
+for (const c of commits) {
+  for (const e of git('ls-tree', '-r', c.sha).split('\n').filter(Boolean)) {
     const m = e.match(/^\d+ blob ([0-9a-f]{40})\t/);
     if (m && !blobCache.has(m[1])) blobCache.set(m[1], null);
   }
@@ -95,29 +126,25 @@ async function worker() {
 await Promise.all(Array.from({ length: 6 }, worker));
 console.log(`blob 上传完成: ${uploaded} 个`);
 // ---------- 2) 逐个提交创建 tree + commit（保持与本地完全一致） ----------
-let created = [];
-for (const line of log) {
-  const [sha, message, an, ae, aI, cn, ce, cI, parents] = line.split('\x1f');
-  const entries = git('ls-tree', '-r', sha).split('\n').filter(Boolean).map((e) => {
+let head = null;
+for (const c of commits) {
+  const entries = git('ls-tree', '-r', c.sha).split('\n').filter(Boolean).map((e) => {
     const m = e.match(/^(\d+) blob ([0-9a-f]{40})\t(.+)$/);
     return { path: m[3], mode: m[1], type: 'blob', sha: blobCache.get(m[2]) };
   });
   if (!DRY) {
-    const localTree = git('rev-parse', `${sha}^{tree}`);
+    const localTree = git('rev-parse', `${c.sha}^{tree}`);
     const t = await api('POST', `${API}/git/trees`, { tree: entries });
     if (t.data.sha !== localTree) throw new Error(`tree SHA 不一致: 本地 ${localTree} / 远端 ${t.data.sha}`);
-    const parentsArr = parents ? parents.trim().split(/\s+/) : [];
-    const c = await api('POST', `${API}/git/commits`, {
-      message, tree: t.data.sha, parents: parentsArr,
-      author: { name: an, email: ae, date: aI },
-      committer: { name: cn, email: ce, date: cI },
+    const r = await api('POST', `${API}/git/commits`, {
+      message: c.message, tree: t.data.sha, parents: c.parents,
+      author: c.author, committer: c.committer,
     });
-    if (c.data.sha !== sha) throw new Error(`commit SHA 不一致: 本地 ${sha} / 远端 ${c.data.sha}`);
+    if (r.data.sha !== c.sha) throw new Error(`commit SHA 不一致: 本地 ${c.sha} / 远端 ${r.data.sha}`);
   }
-  created.push(sha);
-  console.log(`  提交已同步: ${sha.slice(0, 7)}  ${message.slice(0, 46)}`);
+  head = c.sha;
+  console.log(`  提交已同步: ${c.sha.slice(0, 7)}  ${c.message.split('\n')[0].slice(0, 46)}`);
 }
-const head = created[created.length - 1];
 
 // ---------- 3) 创建/更新分支引用 ----------
 if (DRY) {

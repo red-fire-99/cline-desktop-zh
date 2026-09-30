@@ -64,6 +64,7 @@ powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\setup.ps1
 | 重新合并词典 | `launcher\fetch-sources.cmd` → `launcher\rebuild-dict.cmd` |
 | 关闭后台注入器 | `launcher\stop-injector.cmd` |
 | 发布/更新到 GitHub | `launcher\publish-github.cmd`（向导式，见下文） |
+| 网络受限时的发布 | `launcher\publish-github-api.cmd`（走 API 通道，见下文） |
 
 日志位置：`logs\injector.out.log` / `logs\injector.err.log`。
 
@@ -223,6 +224,26 @@ git push -u origin main
 发布后建议顺手做的三件事：在仓库 **About** 里填简介并勾选 Topics
 （`cline` `chinese` `localization` `i18n` `zh-cn` `windows` `webview2` `cdp`）；
 把 README 里的项目名按你的仓库地址微调；给代码补一个星标或写点使用说明。
+
+### 网络受限（github.com 连不通）时怎么发布？
+
+如果 `git push` 卡住或超时（国内网络常见：`github.com:443` 不通，但 `api.github.com` 可通），
+改用 API 通道发布：
+
+- 双击 **`launcher\publish-github-api.cmd`**，粘贴一次 Token 即可；
+- 它会自动完成：检查网络 →（必要时）创建仓库与占位提交 → 设置 Topics/简介 →
+  通过 Git Data API 同步 blob / tree / commit / 分支引用；
+- 生成的 **commit SHA 与本地完全一致**，所以网络恢复后可以正常 `git fetch / pull / push`，
+  不会出现「历史分叉、只能强推」的麻烦；
+- 底层脚本是 `tools\publish-via-api.mjs`，也可以手动用：
+
+```powershell
+$env:GITHUB_TOKEN = 'ghp_xxx'
+node tools\publish-via-api.mjs --repo <用户名>/<仓库名> [--branch main] [--dry-run]
+```
+
+> 原理：GitHub 的 Git Data API（`api.github.com`）与 git 通道（`github.com`）是两套独立入口，
+> 前者在国内往往可用。用同一份内容、同一份作者时间与时区构造对象，算出来的对象哈希与本地 git 完全相同。
 
 ## 免责声明与许可
 
