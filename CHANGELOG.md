@@ -13,6 +13,9 @@
 - 无黑框启动器（`launcher/cline-zh.vbs` → `scripts/launch.ps1`），自动定位官方客户端、必要时询问重启、后台静默启动注入器。
 - 内置 `scripts/setup.ps1`：一键下载便携 Node.js（nodejs.org，失败回退 npmmirror），无需管理员权限。
 - 配套工具：状态检查、漏翻查找、词典热更新、词典重建、来源下载、调试窗口启动。
+- `launcher\publish-github.cmd` + `scripts\publish-github.ps1`：中文向导式一键发布到 GitHub（可选用 Token 自动建仓库并推送，Token 不落盘；`-SelfTest` 可离线自检 git 链路）。
+- `tools\report.mjs`：界面汉化覆盖报告（中文占比 + 漏翻清单，写入 `tools\out\coverage-report.txt`）。
+- `dict\overrides.json`：本地覆盖词条（最高优先级，不被词典重建覆盖）。
 - 端到端自测：`test/e2e.ps1` 使用本机 Edge/Chrome 无头实例验证“注入 → 翻译”全链路。
 - CI：`tools/validate.mjs` 校验词典与脚本（GitHub Actions）。
 

@@ -101,6 +101,38 @@ powershell -File .\test\e2e.ps1               # end-to-end injection test (needs
 powershell -File .\scripts\launch.ps1 -DryRun # show what the launcher would do, change nothing
 ```
 
+## Will it survive Cline updates?
+
+**Yes.** Nothing in the official installation is modified — translations are applied at runtime — so Cline's
+auto-update works normally (no signature/hash issues).
+
+After an update, do this 2-minute check:
+
+1. Quit Cline and start it again via the “Cline 中文版” shortcut (an updated app that restarts itself loses the debug port).
+2. Run `launcher\status.cmd` and read the coverage report.
+
+| Symptom | Cause | Fix |
+| --- | --- | --- |
+| UI back to English | The update restarted Cline without the debug port | Quit Cline, launch via the Chinese shortcut |
+| A few new English strings | New copy in the new version | `launcher\find-missing.cmd` → add to `dict\overrides.json` → `launcher\hot-apply-dict.cmd` |
+| Report says “translator not mounted” | Not started via the launcher, or Cline changed UI framework | Launch via the shortcut; check `logs\injector.err.log` |
+
+## Publishing to GitHub (guided)
+
+1. Double-click `launcher\publish-github.cmd`.
+2. Answer four questions (all have defaults — just press Enter): your name/e-mail, your GitHub username,
+   repository name (default `cline-desktop-zh`), public or private.
+3. Choose how the remote repository is created:
+   - **A (recommended, fully automatic)** — open <https://github.com/settings/tokens/new>, set an expiry,
+     tick **repo**, generate the token, paste it back (input is hidden). The script creates the repo and pushes.
+   - **B** — the script opens the “new repository” page; click **Create repository** and do **not** tick
+     README / .gitignore / license. Return and press Enter.
+4. You should see `✔ 发布成功！` with your repository URL.
+
+The token is used once in memory and is never written to disk or `.git/config`.
+Run `powershell -File scripts\publish-github.ps1 -SelfTest` first to verify the git plumbing offline.
+Re-run `launcher\publish-github.cmd` any time you want to push updates.
+
 ## Disclaimer & License
 
 Unofficial community project; not affiliated with Cline ([cline.bot](https://cline.bot)).

@@ -63,6 +63,7 @@ powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\setup.ps1
 | 改完词典立即生效 | `launcher\hot-apply-dict.cmd`（无需重启） |
 | 重新合并词典 | `launcher\fetch-sources.cmd` → `launcher\rebuild-dict.cmd` |
 | 关闭后台注入器 | `launcher\stop-injector.cmd` |
+| 发布/更新到 GitHub | `launcher\publish-github.cmd`（向导式，见下文） |
 
 日志位置：`logs\injector.out.log` / `logs\injector.err.log`。
 
@@ -79,6 +80,7 @@ powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\setup.ps1
 │   ├─ hot-apply-dict.cmd    #   词典热更新（无需重启）
 │   ├─ rebuild-dict.cmd      #   重新合并词典
 │   ├─ fetch-sources.cmd     #   下载词典来源到 vendor/
+│   ├─ publish-github.cmd    #   向导式一键发布到 GitHub
 │   ├─ create-shortcuts.cmd  #   重新创建快捷方式
 │   └─ stop-injector.cmd     #   结束后台注入器
 ├─ scripts/                  # PowerShell 实现
@@ -87,6 +89,7 @@ powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\setup.ps1
 │   ├─ fetch-sources.ps1     #   下载词典来源
 │   ├─ create-shortcuts.ps1  #   创建桌面 / 开始菜单快捷方式
 │   ├─ status.ps1            #   状态检查
+│   ├─ publish-github.ps1    #   一键发布到 GitHub（-SelfTest 可离线自检）
 │   └─ stop-injector.ps1     #   结束后台注入器
 ├─ tools/                    # Node 工具（注入器 / 翻译脚本 / 词典维护）
 │   ├─ cline-zh.mjs          #   注入器：run / dump / verify / kill
@@ -159,6 +162,67 @@ powershell -NoProfile -ExecutionPolicy Bypass -File .\test\e2e.ps1
 # 启动器干跑：只打印将要执行的动作，不做任何改动
 powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\launch.ps1 -DryRun
 ```
+
+## Cline 更新后还能用吗？
+
+**能用。** 本工具不碰官方任何文件，只在运行时替换界面文字，所以官方自动更新照常进行（不涉及签名/哈希问题）。
+
+更新后按这个顺序确认一下（每次大版本更新花 2 分钟）：
+
+```powershell
+# 1) 先用「Cline 中文版」快捷方式重新启动一次
+# 2) 看覆盖报告
+launcher\status.cmd
+```
+
+| 现象 | 原因 | 怎么办 |
+| --- | --- | --- |
+| 更新后界面变回英文 | 官方更新重启了应用，新实例没带调试端口 | 退出 Cline，用「Cline 中文版」快捷方式再启动一次 |
+| 界面有少量新英文 | 新版本新增了文案，词典里还没有 | `launcher\find-missing.cmd` 抓漏翻 → 填进 `dict\overrides.json` → `launcher\hot-apply-dict.cmd`（立刻生效，不用等发版） |
+| `status.cmd` 显示「翻译器已挂载：否」 | 这次启动没走启动器，或 Cline 换了 UI 框架/不再用 WebView2 | 先确认用启动器启动；仍失败请看 `logs\injector.err.log`，这种情况才需要更新工具本身 |
+
+想提前验证，也可以在开发环境跑一次自测（不开 Cline）：`powershell -File .\test\e2e.ps1`。
+
+## 发布到 GitHub（傻瓜向导）
+
+**第 1 步：双击** `launcher\publish-github.cmd`
+
+**第 2 步：照着回答问题**（每个都有默认值，直接按回车就行）
+
+1. 你的名字/昵称、邮箱 → 决定提交记录里显示的作者
+2. 你的 GitHub 用户名
+3. 仓库名（默认 `cline-desktop-zh`）
+4. 公开 `public` / 私有 `private`
+
+**第 3 步：选 A 或 B 决定怎么建远程仓库**
+
+- **方式 A（推荐，全自动）**
+  1. 浏览器打开 <https://github.com/settings/tokens/new>
+  2. Note 随便填，Expiration 选 30 days，勾选 **repo**，点 Generate token
+  3. 复制那串 token（只显示一次），粘贴回窗口（屏幕不显示字符是正常的，直接粘贴 + 回车）
+  → 脚本自动建好仓库并推送完成
+- **方式 B（不想用 token）**
+  脚本会打开 `https://github.com/<你的用户名>/cline-desktop-zh/new` 页面，你点 **Create repository**，
+  **注意不要勾选** README / .gitignore / license（本地已经有了，否则会冲突），回来按回车继续
+
+**第 4 步：** 看到 `✔ 发布成功！` 和仓库地址，浏览器打开即可。
+
+几个说明：
+
+- 建议发布前先跑一次本地自检：`powershell -File scripts\publish-github.ps1 -SelfTest`（不联网，验证 git 链路）
+- Token 只在内存里用一次，**不会**写进任何文件或 `.git/config`
+- 以后改了内容要更新仓库？再双击一次 `launcher\publish-github.cmd` 就行
+- 仍然想手动敲命令的话：
+
+```powershell
+git config user.name "你的名字"; git config user.email "你的邮箱"
+git remote add origin https://github.com/<用户名>/cline-desktop-zh.git
+git push -u origin main
+```
+
+发布后建议顺手做的三件事：在仓库 **About** 里填简介并勾选 Topics
+（`cline` `chinese` `localization` `i18n` `zh-cn` `windows` `webview2` `cdp`）；
+把 README 里的项目名按你的仓库地址微调；给代码补一个星标或写点使用说明。
 
 ## 免责声明与许可
 
