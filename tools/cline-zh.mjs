@@ -15,7 +15,7 @@
  */
 import { readConfig } from './config.mjs';
 import { spawn, execSync } from 'node:child_process';
-import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'node:fs';
+import { readFileSync, writeFileSync, existsSync, mkdirSync, unlinkSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -99,14 +99,14 @@ class Cdp {
 
 function isAppRunning() {
   try {
-    const out = execSync('tasklist /FI "IMAGENAME eq cline-app.exe" /NH', { encoding: 'utf8' });
+    const out = execSync('tasklist /FI "IMAGENAME eq cline-app.exe" /NH', { encoding: 'utf8', windowsHide: true });
     return /cline-app\.exe/i.test(out);
   } catch { return false; }
 }
 
 function spawnApp() {
   const child = spawn(EXE, [], {
-    cwd: dirname(EXE), detached: false, stdio: 'ignore',
+    cwd: dirname(EXE), detached: false, stdio: 'ignore', windowsHide: true,
     env: { ...process.env, WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS: `--remote-debugging-port=${PORT} --lang=${CFG.lang}` },
   });
   child.on('error', (e) => log('启动失败:', e.message));
@@ -114,7 +114,7 @@ function spawnApp() {
 }
 
 function killApp() {
-  try { execSync('taskkill /IM cline-app.exe /F', { stdio: 'ignore' }); } catch { /* noop */ }
+  try { execSync('taskkill /IM cline-app.exe /F', { stdio: 'ignore', windowsHide: true }); } catch { /* noop */ }
 }
 
 async function listPageTargets() {
@@ -225,7 +225,11 @@ async function doDump() {
 // ---------- 注入 ----------
 function buildInjectSource(dict) {
   const translator = readFileSync(join(__dirname, 'translator.js'), 'utf8');
-  return `window.__CLINE_ZH_DICT__=${JSON.stringify(dict)};\n${translator}\n`;
+  // 片段词典（可选文件）：整条文本没命中时，对文本中的片段做替换（运行时错误常被包在 JSON 里）
+  let frag = '{}';
+  const fragPath = join(__dirname, '..', 'dict', 'fragments.json');
+  if (existsSync(fragPath)) { try { frag = readFileSync(fragPath, 'utf8'); } catch { /* 用空对象 */ } }
+  return `window.__CLINE_ZH_DICT__=${JSON.stringify(dict)};\nwindow.__CLINE_ZH_FRAG__=${frag};\n${translator}\n`;
 }
 
 async function attachAndInject(t, injectSrc) {
@@ -242,6 +246,17 @@ async function attachAndInject(t, injectSrc) {
 
 // ---------- run 模式: 启动应用并持续注入 ----------
 async function doRun() {
+  // 记录自己的 PID，便于启动器/停止脚本精确结束旧注入器（避免全表扫命令行，慢且不可靠）
+  const pidFile = join(__dirname, '..', 'logs', 'injector.pid');
+  try {
+    mkdirSync(join(__dirname, '..', 'logs'), { recursive: true });
+    writeFileSync(pidFile, String(process.pid), 'utf8');
+    const cleanupPid = () => { try { if (readFileSync(pidFile, 'utf8').trim() === String(process.pid)) unlinkSync(pidFile); } catch { } };
+    process.on('exit', cleanupPid);
+    process.on('SIGINT', () => { cleanupPid(); process.exit(0); });
+    process.on('SIGTERM', () => { cleanupPid(); process.exit(0); });
+  } catch { /* 记录失败不影响汉化 */ }
+
   let dict = {};
   if (existsSync(DICT_FILE)) {
     dict = JSON.parse(readFileSync(DICT_FILE, 'utf8'));

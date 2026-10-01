@@ -66,17 +66,26 @@ if (Test-Path $cfgPath) {
   } catch { }
 }
 
-# ---------- 3.5) DryRun: 只打印计划，不做任何改动 ----------
+# ---------- 3.5) 端口探测：判断调试端口是否已开启 ----------
+# 说明: 以前用 CIM 扫 msedgewebview2 的命令行，机器上 WebView2 进程多时要 20~30 秒；
+#       直接探本机端口更快也更准确（这正是我们真正关心的问题）。
+function Test-DebugPort([int]$p) {
+  try {
+    Invoke-WebRequest "http://127.0.0.1:$p/json/version" -TimeoutSec 1 -UseBasicParsing | Out-Null
+    return $true
+  } catch { return $false }
+}
+
+# ---------- 3.6) DryRun: 只打印计划，不做任何改动 ----------
 if ($DryRun) {
   $running = @(Get-Process cline-app -ErrorAction SilentlyContinue).Count
-  $debugOn = @(Get-CimInstance Win32_Process -Filter "Name='msedgewebview2.exe'" -ErrorAction SilentlyContinue |
-    Where-Object { $_.CommandLine -like "*--remote-debugging-port=$port*" }).Count -gt 0
+  $debugOn = Test-DebugPort $port
   Write-Host '[DryRun] 计划如下（未执行任何操作）:'
   Write-Host ("  仓库根目录 : " + $base)
   Write-Host ("  便携 Node  : " + $node + " " + $(if (Test-Path $node) { '已安装 ' + (& $node --version) } else { '缺失' }))
   Write-Host ("  Cline 主程序: " + $exe)
-  Write-Host ("  调试端口   : " + $port + "   语言: " + $lang)
-  Write-Host ("  Cline 进程 : " + $(if ($running -gt 0) { "正在运行($running)" } else { '未运行' }) + "；WebView2 调试端口: " + $(if ($debugOn) { '已开启' } else { '未开启' }))
+  Write-Host ("  调试端口   : " + $port + "   语言: " + $lang + "   端口已开: " + $debugOn)
+  Write-Host ("  Cline 进程 : " + $(if ($running -gt 0) { "正在运行($running)" } else { '未运行' }))
   Write-Host ("  将设置环境变量 WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS=--remote-debugging-port=$port --lang=$lang")
   Write-Host ("  将启动注入器命令: " + $node + " tools\cline-zh.mjs run --port $port --exe `"$exe`" --dict ..\dict\zh-cn.json")
   exit 0
@@ -84,10 +93,7 @@ if ($DryRun) {
 
 # ---------- 4) Cline 运行状态 ----------
 $procs = @(Get-Process cline-app -ErrorAction SilentlyContinue)
-$debugOn = $false
-Get-CimInstance Win32_Process -Filter "Name='msedgewebview2.exe'" -ErrorAction SilentlyContinue |
-  Where-Object { $_.CommandLine -like "*--remote-debugging-port=$port*" } |
-  ForEach-Object { $script:debugOn = $true }
+$debugOn = Test-DebugPort $port
 
 if ($procs.Count -gt 0 -and -not $debugOn) {
   $ans = ShowMsg "Cline 正在以英文模式运行。`n`n是否关闭它并以中文模式重新启动？`n（尚未发送的输入可能会丢失）" (4 + 48)
@@ -105,19 +111,42 @@ if ($procs.Count -eq 0) {
 }
 
 # ---------- 6) 重启后台注入器（隐藏窗口，日志写入 logs\） ----------
-Get-CimInstance Win32_Process -Filter "Name='node.exe'" -ErrorAction SilentlyContinue |
-  Where-Object { $_.CommandLine -match 'cline-zh\.mjs' } |
-  ForEach-Object { Stop-Process -Id $_.ProcessId -Force -ErrorAction SilentlyContinue }
+# 优先按 PID 文件精确结束旧注入器（快、准）；没有 PID 文件时才回退到命令行扫描
+$killed = 0
+$pidFile = Join-Path $base 'logs\injector.pid'
+if (Test-Path $pidFile) {
+  $oldPid = (Get-Content $pidFile -Raw -ErrorAction SilentlyContinue).Trim()
+  if ($oldPid -match '^\d+$') {
+    $p = Get-Process -Id ([int]$oldPid) -ErrorAction SilentlyContinue
+    if ($p -and $p.ProcessName -eq 'node') { Stop-Process -Id $p.Id -Force -ErrorAction SilentlyContinue; $killed++ }
+  }
+  Remove-Item $pidFile -Force -ErrorAction SilentlyContinue
+}
+if ($killed -eq 0) {
+  # 回退方案：结束所有「由本工具便携 Node 启动」的 node 进程（比扫命令行快几百倍，且不依赖 CIM）
+  foreach ($p in @(Get-Process node -ErrorAction SilentlyContinue)) {
+    try {
+      if ($p.Path -eq $node) { Stop-Process -Id $p.Id -Force -ErrorAction SilentlyContinue; $killed++ }
+    } catch { }
+  }
+}
 
 $logDir = Join-Path $base 'logs'
 if (-not (Test-Path $logDir)) { New-Item -ItemType Directory -Force -Path $logDir | Out-Null }
 
-$injArgs = @(
-  (Join-Path $base 'tools\cline-zh.mjs'), 'run',
-  '--port', "$port",
-  '--exe', ('"' + $exe + '"'),
-  '--dict', '..\dict\zh-cn.json'
-)
-Start-Process -FilePath $node -ArgumentList $injArgs -WorkingDirectory $base -WindowStyle Hidden `
-  -RedirectStandardOutput (Join-Path $logDir 'injector.out.log') `
-  -RedirectStandardError  (Join-Path $logDir 'injector.err.log') | Out-Null
+$outLog = Join-Path $logDir 'injector.out.log'
+$errLog = Join-Path $logDir 'injector.err.log'
+
+# 说明: 这里用 Start-Process -WindowStyle Hidden 启动注入器。
+#       曾尝试 ProcessStartInfo + CreateNoWindow + 重定向标准流，但「长驻子进程 + 重定向管道」
+#       会让父进程无法退出（表现为启动器卡住不返回），因此沿用这套不会卡住的写法。
+Start-Process -FilePath $node `
+  -ArgumentList @(
+    ('"' + (Join-Path $base 'tools\cline-zh.mjs') + '"'), 'run',
+    '--port', "$port",
+    '--exe', ('"' + $exe + '"'),
+    '--dict', '"..\dict\zh-cn.json"'
+  ) `
+  -WorkingDirectory $base -WindowStyle Hidden `
+  -RedirectStandardOutput $outLog `
+  -RedirectStandardError $errLog | Out-Null

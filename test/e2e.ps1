@@ -58,7 +58,8 @@ $passed = $false
 for ($i = 0; $i -lt 12; $i++) {
   Start-Sleep -Milliseconds 1200
   $out = & $node (Join-Path $base 'test\probe.mjs') $port 2>&1 | Out-String
-  if ($out -match '验证通过') { $passed = $true; Write-Host $out.Trim(); break }
+  # 只用 ASCII 标记判定，避免 PowerShell 以 GBK 解码 node 的 UTF-8 输出导致中文匹配误判
+  if ($out -match 'VERIFY-RESULT: PASS') { $passed = $true; Write-Host $out.Trim(); break }
 }
 if (-not $passed) { Write-Host '注入结果未通过:'; $out }
 

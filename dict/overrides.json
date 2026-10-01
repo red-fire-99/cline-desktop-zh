@@ -13,5 +13,6 @@
   "^Running command\\.\\.\\.$": "正在执行命令...",
   "^The run failed: Insufficient balance\\. Your Cline Credits balance is \\$([0-9.]+)$": "运行失败：余额不足。你的 Cline Credits 余额为 $$1",
   "The run failed: JSON error injected into SSE stream": "运行失败：SSE 流中出现 JSON 错误",
+  "^The run failed: \\{\"error\":\\{\"code\":\"([^\"]*)\",\"message\":\"Error 429: Daily free limit reached on model ([^\"]*?)\\. Try again in ([^\"]*?)\"\\}\\}$": "运行失败：{\"error\":{\"code\":\"$1\",\"message\":\"模型 $2 的每日免费额度已用尽，请在 $3 后重试\"}}",
   "^The run failed:\\s*(.+)$": "运行失败：$1"
 }

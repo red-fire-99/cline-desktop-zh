@@ -40,7 +40,24 @@
   特定常见错误（如余额不足）另有完整中文词条，会优先命中（因为精确匹配优先于正则，
   且这类词条在词典中按 ASCII 排序排在兜底规则之前）。
 
-### 3. 生效与提交
+### 3. 两类词典的分工
+
+| 文件 | 作用 | 匹配方式 |
+| --- | --- | --- |
+| `dict/zh-cn.json` | 由各来源合并生成的词典（**不要手改**） | 整条文本：精确 → 正则 |
+| `dict/overrides.json` | 人工维护，优先级最高（**优先手改这里**） | 整条文本：精确 → 正则 |
+| `dict/fragments.json` | 片段词典：整条没命中时，对文本中出现的**短语**逐一替换 | 文本内子串（长的片段优先） |
+
+什么时候用 `fragments.json`？当错误信息被包在长文本 / JSON 里，整条匹配不上，例如：
+
+```
+The run failed: {"error":{"code":"INFERENCE_CAP_ERROR","message":"Error 429: Daily free limit reached on model xxx. Try again in 23h 50m"}}
+```
+
+此时把 `Daily free limit reached on model `、`Try again in ` 这类**稳定的错误短语**放进 `fragments.json` 即可，
+不必为每种 JSON 结构写一条整条规则。
+
+### 4. 生效与提交
 
 1. 运行 `launcher\hot-apply-dict.cmd` —— 立即热更新到正在运行的界面，无需重启；
 2. 确认没问题后提 PR（建议一个 PR 只做一类改动，便于审核）。

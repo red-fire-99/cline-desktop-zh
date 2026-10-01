@@ -4,6 +4,8 @@ const PORT = portFromArgv();
 const fs = await import('node:fs');
 const path = await import('node:path');
 const dict = JSON.parse(fs.readFileSync(path.join(import.meta.dirname, '..', 'dict', 'zh-cn.json'), 'utf8'));
+const fragPath = path.join(import.meta.dirname, '..', 'dict', 'fragments.json');
+const frags = fs.existsSync(fragPath) ? fs.readFileSync(fragPath, 'utf8') : '{}';
 const translator = fs.readFileSync(path.join(import.meta.dirname, 'translator.js'), 'utf8');
 const targets = (await (await fetch(`http://127.0.0.1:${PORT}/json/list`)).json()).filter((t) => t.type === 'page');
 if (!targets.length) { console.log('未发现页面, 应用未运行。'); process.exit(1); }
@@ -16,7 +18,7 @@ ws.addEventListener('message', (ev) => {
   if (m.id && pend.has(m.id)) { pend.get(m.id)(m.result); pend.delete(m.id); }
 });
 const send = (method, params = {}) => new Promise((res) => { pend.set(++id, res); ws.send(JSON.stringify({ id, method, params })); });
-const expr = `(() => { window.__clineZh = undefined; window.__CLINE_ZH_DICT__ = ${JSON.stringify(dict)}; ${translator} ; return JSON.stringify({ ok: true, size: Object.keys(window.__CLINE_ZH_DICT__).length }); })()`;
+const expr = `(() => { window.__clineZh = undefined; window.__CLINE_ZH_DICT__ = ${JSON.stringify(dict)}; window.__CLINE_ZH_FRAG__ = ${frags}; ${translator} ; return JSON.stringify({ ok: true, size: Object.keys(window.__CLINE_ZH_DICT__).length, fragSize: Object.keys(window.__CLINE_ZH_FRAG__).length }); })()`;
 const r = await send('Runtime.evaluate', { expression: expr, returnByValue: true });
 console.log('热更新结果:', r.result.value);
 ws.close();

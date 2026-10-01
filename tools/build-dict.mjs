@@ -209,8 +209,16 @@ if (totalMerged < 500) {
 }
 
 mkdirSync(OUT_DIR, { recursive: true });
+// 排序规则：精确词条按字母序；正则词条按长度降序（长的、具体的规则先匹配），
+// 再按字母序兜底。这样「具体规则」总是排在「兜底规则」前面，不依赖字符编码顺序。
+const isRe = (k) => k.startsWith('^') || k.startsWith('(?i)');
 const sorted = {};
-for (const k of Object.keys(merged).sort()) sorted[k] = merged[k];
+for (const k of Object.keys(merged).sort((a, b) => {
+  const ra = isRe(a), rb = isRe(b);
+  if (ra !== rb) return ra ? 1 : -1;          // 精确在前
+  if (ra) return (b.length - a.length) || a.localeCompare(b);
+  return a.localeCompare(b);
+})) sorted[k] = merged[k];
 writeFileSync(OUT_FILE, JSON.stringify(sorted, null, 2) + '\n', 'utf8');
 
 const total = Object.keys(sorted).length;

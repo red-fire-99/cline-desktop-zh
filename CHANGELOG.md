@@ -2,6 +2,25 @@
 
 本项目遵循 [Semantic Versioning](https://semver.org/lang/zh-CN/)。
 
+## [v1.0.1] — 2026-10-01
+
+修复「偶发控制台窗口一闪而过」+ 增强运行时错误的中文覆盖。
+
+**修复**
+
+- 消除本工具自身可能弹出的控制台窗口：所有子进程调用补 `windowsHide`（`cline-zh.mjs` 的 `tasklist` / `taskkill` / 启动 Cline、`validate.mjs` 的语法检查），自检时不再闪 14 下
+- 启动器判定「调试端口是否已开启」改为**直接探本机端口**（毫秒级），不再用 CIM 扫描几十个 WebView2 进程的命令行（原实现要 20~30 秒，机器上 WebView2 多时更慢）
+- 注入器改为写 `logs\injector.pid`，启动器 / 停止脚本按 PID 精确结束旧进程；无 PID 文件时回退到「按可执行文件路径匹配」，彻底去掉慢查询
+- 停止脚本 `stop-injector.cmd` 同样走 PID 文件，速度从数秒降到毫秒级
+
+**增强**
+
+- 新增 **片段词典** `dict/fragments.json`（19 条）：整条文本没命中时，再对文本中出现的错误短语逐一替换，
+  专门对付「被包在 JSON / 长句里」的运行时错误（例如
+  `The run failed: {"error":{"code":"...","message":"Error 429: Daily free limit reached..."}}`）
+- 词典排序规则改为**正则按长度降序**：更具体的规则永远排在兜底规则之前，不再依赖字符编码顺序
+- 新增「每日免费额度耗尽」等 JSON 运行时错误的完整中文译文；词典 2100 → 2101
+
 ## [v1.0.0] — 2026-09-30
 
 首个版本：Cline 桌面版（Windows）运行时中文界面工具。

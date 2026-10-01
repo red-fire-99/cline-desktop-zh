@@ -16,6 +16,19 @@ for (const k of Object.keys(dict)) {
   } catch { /* 忽略非法正则 */ }
 }
 
+// 片段级替换：整条没命中时，对文本中的片段逐一替换（长片段优先）
+const fragPath = path.join(import.meta.dirname, '..', 'dict', 'fragments.json');
+const frags = fs.existsSync(fragPath) ? JSON.parse(fs.readFileSync(fragPath, 'utf8')) : {};
+const fragKeys = Object.keys(frags).filter((k) => k && frags[k]).sort((a, b) => b.length - a.length);
+function applyFragments(text) {
+  if (!fragKeys.length || text.length < 12) return null;
+  let out = text, hit = false;
+  for (const k of fragKeys) {
+    if (out.includes(k)) { out = out.split(k).join(frags[k]); hit = true; }
+  }
+  return hit ? out : null;
+}
+
 function lookup(text) {
   let t = dict[text];
   if (t !== undefined) return t;
@@ -25,20 +38,23 @@ function lookup(text) {
     const m = text.match(re);
     if (m) return rep.replace(/\$(\d)/g, (_, g) => (m[+g] !== undefined ? m[+g] : ''));
   }
-  return null;
+  return applyFragments(text);   // 整条未命中 -> 片段替换
 }
 
+const jsonDaily = 'The run failed: {"error":{"code":"INFERENCE_CAP_ERROR","message":"Error 429: Daily free limit reached on model deepseek/deepseek-v4.1-flash. Try again in 23h 50m"}}';
+
 const cases = [
-  // 运行时错误（本次新增）
+  // 运行时错误：整条规则命中（JSON 额度耗尽）
+  [jsonDaily,
+    '运行失败：{"error":{"code":"INFERENCE_CAP_ERROR","message":"模型 deepseek/deepseek-v4.1-flash 的每日免费额度已用尽，请在 23h 50m 后重试"}}'],
+  // 运行时错误：余额不足（金额可变）
   ['The run failed: Insufficient balance. Your Cline Credits balance is $0.01',
     '运行失败：余额不足。你的 Cline Credits 余额为 $0.01'],
-  ['The run failed: Insufficient balance. Your Cline Credits balance is $0.00',
-    '运行失败：余额不足。你的 Cline Credits 余额为 $0.00'],
-  ['The run failed: JSON error injected into SSE stream',
-    '运行失败：SSE 流中出现 JSON 错误'],
+  ['The run failed: JSON error injected into SSE stream', '运行失败：SSE 流中出现 JSON 错误'],
   // 兜底规则：其余未知错误保留原文细节
-  ['The run failed: rate limit exceeded, retry in 30s',
-    '运行失败：rate limit exceeded, retry in 30s'],
+  ['The run failed: rate limit exceeded, retry in 30s', '运行失败：rate limit exceeded, retry in 30s'],
+  // 片段替换：未知结构但含已知错误短语
+  ['Provider error: Rate limit exceeded, please retry later', 'Provider error: 超出速率限制, please retry later'],
   // 已有词条回归
   ['Settings', '设置'],
   ['Read 7 files', '读取 7 个文件'],
@@ -52,20 +68,29 @@ for (const [input, want] of cases) {
   const got = lookup(input);
   const pass = got === want;
   if (!pass) failed++;
-  console.log(`${pass ? 'PASS' : 'FAIL'}  ${JSON.stringify(input)}  =>  ${JSON.stringify(got)}` +
+  console.log(`${pass ? 'PASS' : 'FAIL'}  ${JSON.stringify(input).slice(0, 78)}  =>  ${JSON.stringify(got).slice(0, 96)}` +
     (pass ? '' : `\n      期望: ${JSON.stringify(want)}`));
 }
 
-// 关键回归：特定词条必须排在兜底词条之前（词典按 key ASCII 排序，正则按 key 顺序匹配）
-const specificKey = '^The run failed: Insufficient balance\\. Your Cline Credits balance is \\$([0-9.]+)$';
+// 关键回归: 具体规则必须排在兜底规则之前（词典对正则按长度降序排序）
 const catchAllKey = '^The run failed:\\s*(.+)$';
-const iSpecific = Object.keys(dict).indexOf(specificKey);
-const iCatchAll = Object.keys(dict).indexOf(catchAllKey);
-console.log(`\n顺序检查: 特定词条@${iSpecific}  兜底词条@${iCatchAll}  -> ` +
-  (iSpecific >= 0 && iSpecific < iCatchAll ? '特定优先(正确)' : '顺序错误(兜底会抢先命中)'));
-const orderOk = iSpecific >= 0 && iSpecific < iCatchAll;
+const specificKeys = [
+  '^The run failed: Insufficient balance\\. Your Cline Credits balance is \\$([0-9.]+)$',
+  '^The run failed: \\{"error":\\{"code":"([^"]*)","message":"Error 429: Daily free limit reached on model ([^"]*?)\\. Try again in ([^"]*?)"\\}\\}$',
+];
+const keys = Object.keys(dict);
+const iCatchAll = keys.indexOf(catchAllKey);
+let orderOk = iCatchAll > 0;
+console.log(`\n顺序检查: 兜底规则@${iCatchAll}`);
+for (const k of specificKeys) {
+  const i = keys.indexOf(k);
+  const ok = i >= 0 && i < iCatchAll;
+  if (!ok) orderOk = false;
+  console.log(`  ${ok ? 'OK  ' : 'FAIL'} 具体规则@${i}  ${k.slice(0, 62)}…`);
+}
+console.log(`片段词典: ${fragKeys.length} 条`);
 
-console.log(`\n词条总数 ${Object.keys(dict).length}，测试 ${cases.length} 条`);
+console.log(`\n词条总数 ${keys.length}，测试 ${cases.length} 条`);
 if (failed || !orderOk) {
   console.error(`✘ 失败 ${failed} 条${orderOk ? '' : '，且顺序检查未通过'}`);
   process.exit(1);

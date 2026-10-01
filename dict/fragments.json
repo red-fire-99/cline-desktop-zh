@@ -1,0 +1,21 @@
+{
+  "Daily free limit reached on model ": "以下模型的每日免费额度已用尽：",
+  "Try again in ": "请在 ",
+  "Try again later": "请稍后重试",
+  "Rate limit exceeded": "超出速率限制",
+  "Too Many Requests": "请求过多",
+  "Insufficient balance": "余额不足",
+  "Insufficient credits": "额度不足",
+  "Invalid API key": "API 密钥无效",
+  "Unauthorized": "未授权",
+  "Model not found": "未找到该模型",
+  "Context length exceeded": "超出上下文长度限制",
+  "maximum context length": "上下文长度上限",
+  "Connection error": "连接错误",
+  "Network error": "网络错误",
+  "Request cancelled": "请求已取消",
+  "The user aborted the request": "用户中止了请求",
+  "Something went wrong": "出错了",
+  "upstream error": "上游服务出错",
+  "Service Unavailable": "服务不可用"
+}

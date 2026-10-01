@@ -28,6 +28,8 @@ const r = await send('Runtime.evaluate', { expression: expr, returnByValue: true
 console.log(r.result.value);
 const o = JSON.parse(r.result.value);
 const ok = o.injected && /[\u4e00-\u9fff]/.test(o.btn || '') && /[\u4e00-\u9fff]/.test(o.count || '') && /[\u4e00-\u9fff]/.test(o.ph || '') && /[\u4e00-\u9fff]/.test(o.dyn || '');
+// 输出 ASCII 判定标记：调用方（PowerShell）用纯 ASCII 匹配，避免中文编码问题导致误判
+console.log('VERIFY-RESULT: ' + (ok ? 'PASS' : 'FAIL'));
 console.log(ok ? 'cline-zh.mjs 注入链验证通过 ✔' : 'cline-zh.mjs 注入链验证失败 ✘');
 ws.close();
 process.exit(ok ? 0 : 1);

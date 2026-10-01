@@ -56,7 +56,7 @@ if (!existsSync(dictPath)) {
 const toolsDir = join(ROOT, 'tools');
 for (const f of readdirSync(toolsDir).filter((x) => x.endsWith('.mjs'))) {
   try {
-    execFileSync(process.execPath, ['--check', join(toolsDir, f)], { stdio: 'pipe' });
+    execFileSync(process.execPath, ['--check', join(toolsDir, f)], { stdio: 'pipe', windowsHide: true });
     ok(`tools/${f} 语法检查通过`);
   } catch (e) {
     errors.push(`tools/${f} 语法错误: ${String(e.stderr || e.message).split('\n')[0]}`);

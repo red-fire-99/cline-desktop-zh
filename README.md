@@ -196,6 +196,7 @@ launcher\status.cmd
 | 更新后界面变回英文 | 官方更新重启了应用，新实例没带调试端口 | 退出 Cline，用「Cline 中文版」快捷方式再启动一次 |
 | 界面有少量新英文 | 新版本新增了文案，词典里还没有 | `launcher\find-missing.cmd` 抓漏翻 → 填进 `dict\overrides.json` → `launcher\hot-apply-dict.cmd`（立刻生效，不用等发版） |
 | `status.cmd` 显示「翻译器已挂载：否」 | 这次启动没走启动器，或 Cline 换了 UI 框架/不再用 WebView2 | 先确认用启动器启动；仍失败请看 `logs\injector.err.log`，这种情况才需要更新工具本身 |
+| 偶发看到黑色控制台窗口一闪而过 | 本工具 v1.0.1 起已给所有子进程加隐藏标志；若仍出现，多半来自**其他程序**（例如常驻的 MCP 服务、IDE、其他 AI 助手等） | 打开任务管理器按「创建时间」排序，在闪现的瞬间看是哪个程序起的进程；也可临时关闭其他常驻应用观察 |
 
 想提前验证，也可以在开发环境跑一次自测（不开 Cline）：`powershell -File .\test\e2e.ps1`。
 

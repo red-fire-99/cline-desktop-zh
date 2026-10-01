@@ -48,6 +48,31 @@
   }
   var reCache = null, reCacheSrc = null;
 
+  // ---------- 片段级替换（适用于被包在 JSON / 长句里的运行时错误等） ----------
+  // 整条文本没命中任何词条时，再对文本中出现的「片段」逐一替换；
+  // 例如: The run failed: {"error":{"code":"...","message":"Error 429: Daily free limit reached..."}}
+  var fragCache = null, fragCacheSrc = null;
+  function getFragments() {
+    var f = window.__CLINE_ZH_FRAG__;
+    if (!f) return null;
+    if (fragCacheSrc === f) return fragCache;
+    fragCacheSrc = f;
+    fragCache = Object.keys(f).filter(function (k) { return k && f[k]; })
+      .sort(function (a, b) { return b.length - a.length; });   // 长的片段优先，避免被短片段抢先
+    return fragCache;
+  }
+  function applyFragments(text) {
+    var list = getFragments();
+    if (!list || !list.length || text.length < 12) return null;
+    var dict = window.__CLINE_ZH_FRAG__;
+    var out = text, hit = false;
+    for (var i = 0; i < list.length; i++) {
+      var k = list[i];
+      if (out.indexOf(k) >= 0) { out = out.split(k).join(dict[k]); hit = true; }
+    }
+    return hit ? out : null;
+  }
+
   function translateTextNode(node, dict) {
     var raw = node.nodeValue;
     if (!raw) return;
@@ -64,6 +89,9 @@
         return;
       }
     }
+    // 整条未命中 -> 片段级替换
+    var frag = applyFragments(core);
+    if (frag) node.nodeValue = raw.replace(core, frag);
   }
 
   function translateElement(el, dict) {
