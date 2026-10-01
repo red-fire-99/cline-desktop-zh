@@ -1884,6 +1884,7 @@
   "The run failed: JSON error injected into SSE stream": "运行失败：SSE 流中出现 JSON 错误",
   "The selected model does not report reasoning support": "所选模型未声明支持深度思考",
   "The session could not be removed from local history.": "无法从本地历史中移除该会话。",
+  "The socket connection was closed unexpectedly. For more information, pass verbose: true in the second argument to fetch()": "套接字连接意外中断。如需更多信息，请在 fetch() 的第二个参数中传入 verbose: true。",
   "The transcription provider returned no text": "语音转录提供商未返回任何文本",
   "The update check could not be started. Try again in a moment.": "无法开始检查更新，请稍后重试。",
   "The update check failed. Try again in a moment.": "检查更新失败, 请稍后重试。",

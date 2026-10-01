@@ -55,6 +55,10 @@ const cases = [
   ['The run failed: rate limit exceeded, retry in 30s', '运行失败：rate limit exceeded, retry in 30s'],
   // 片段替换：未知结构但含已知错误短语
   ['Provider error: Rate limit exceeded, please retry later', 'Provider error: 超出速率限制, please retry later'],
+  // Node/undici fetch 网络错误（常被包在更长的文本里）
+  ['The socket connection was closed unexpectedly. For more information, pass verbose: true in the second argument to fetch()',
+    '套接字连接意外中断。如需更多信息，请在 fetch() 的第二个参数中传入 verbose: true。'],
+  ['Request failed with ECONNRESET while streaming', 'Request failed with 连接被重置 while streaming'],
   // 已有词条回归
   ['Settings', '设置'],
   ['Read 7 files', '读取 7 个文件'],

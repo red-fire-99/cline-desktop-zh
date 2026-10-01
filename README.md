@@ -159,7 +159,9 @@ powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\setup.ps1
 
 - 仅支持 **Windows**（依赖 WebView2 的 CDP 通道与 Windows 脚本宿主）。
 - 托盘原生菜单、系统级弹窗（如文件选择器）保持英文。
-- 聊天内容、代码块、输入框内容不会被翻译（刻意跳过）。
+- 聊天内容、代码块、输入框内容不会被翻译（刻意跳过 `pre` / `code` / `textarea` / `[contenteditable]`）；
+  ⚠️ 副作用：一句错误里若夹着行内代码（例如 `fetch()` 的 `verbose: true`），代码部分保持原样，
+  且句子会被拆成多个文本节点导致「只翻一半」。补救办法：把被拆开的前后两段也写进 `dict/fragments.json`（本项目已这么做）。
 - 官方大版本更新后可能出现新文案未覆盖，用 `launcher\find-missing.cmd` 补齐即可；注入机制本身不受影响。
 
 ## 卸载
