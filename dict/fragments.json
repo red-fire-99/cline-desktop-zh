@@ -2,6 +2,10 @@
   "Daily free limit reached on model ": "以下模型的每日免费额度已用尽：",
   "Try again in ": "请在 ",
   "Try again later": "请稍后重试",
+  "then try again.": "然后重试。",
+  "access forbidden: ": "无访问权限：",
+  "is not available in your region": "在你所在的地区不可用",
+  "Sign in to Cline again in Settings → Account, then try again.": "请在「设置 → 账户」中重新登录 Cline 后重试。",
   "Rate limit exceeded": "超出速率限制",
   "Too Many Requests": "请求过多",
   "Insufficient balance": "余额不足",
@@ -17,5 +21,6 @@
   "The user aborted the request": "用户中止了请求",
   "Something went wrong": "出错了",
   "upstream error": "上游服务出错",
-  "Service Unavailable": "服务不可用"
+  "Service Unavailable": "服务不可用",
+  "Only responses will be accepted": "该模型只接受对话回复，不支持工具调用"
 }

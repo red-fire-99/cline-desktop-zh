@@ -81,6 +81,7 @@ powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\setup.ps1
 | 找漏翻的文案 | 把 Cline 停在对应页面，运行 `launcher\find-missing.cmd` |
 | 改完词典立即生效 | `launcher\hot-apply-dict.cmd`（无需重启） |
 | 重新合并词典 | `launcher\fetch-sources.cmd` → `launcher\rebuild-dict.cmd` |
+| 扫描还有哪些文案没翻 | `node tools\scan-ui-strings.mjs`（只读扫描应用前端，输出候选清单） |
 | 关闭后台注入器 | `launcher\stop-injector.cmd` |
 
 日志位置：`logs\injector.out.log` / `logs\injector.err.log`。
@@ -95,6 +96,7 @@ powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\setup.ps1
 │   ├─ setup.cmd             #   安装便携 Node.js + 创建快捷方式
 │   ├─ status.cmd            #   汉化状态检查
 │   ├─ find-missing.cmd      #   查找当前页面的漏翻文案
+│   ├─ scan-ui-strings.cmd   #   扫描前端资源，列出词典未覆盖的文案
 │   ├─ hot-apply-dict.cmd    #   词典热更新（无需重启）
 │   ├─ rebuild-dict.cmd      #   重新合并词典
 │   ├─ fetch-sources.cmd     #   下载词典来源到 vendor/

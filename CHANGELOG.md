@@ -2,6 +2,32 @@
 
 本项目遵循 [Semantic Versioning](https://semver.org/lang/zh-CN/)。
 
+## [v1.0.2] — 2026-10-01
+
+用「扫描前端资源」的方式系统性补齐漏翻文案。
+
+**新增**
+
+- `tools\scan-ui-strings.mjs`：通过 CDP 读取应用已加载的前端 JS（**只读，不重启应用、不打断会话**），
+  抽取全部英文文案字面量，与词典比对，输出「还没覆盖」的候选清单（`tools\out\ui-strings-missing.txt`），
+  并带噪声过滤（排除 JS 符号、CSS 类名、zod 报错、代码高亮 token、主题/字体名等）
+- 片段词典 19 → **24** 条；词典 2101 → **2159** 条（新增 59 条来自扫描结果的 UI 文案）
+
+**新增译文（部分）**
+
+| 原文 | 中文 |
+| --- | --- |
+| `Invalid input` / `Invalid hostname` / `Invalid size` | 输入无效 / 主机名无效 / 大小无效 |
+| `Tool call execution denied.` | 工具调用被拒绝。 |
+| `Streaming transcription network connection was lost` | 转写的流式网络连接已断开 |
+| `Gateway request failed` / `fetch failed` | 网关请求失败 / 请求失败 |
+| `Clipboard API not available` | 剪贴板 API 不可用 |
+| `temperature is not supported for reasoning models` | 推理模型不支持 temperature 参数 |
+| `Record speech` / `Attach images` | 录制语音 / 附加图片 |
+| `Pin failed` / `Unpin failed` / `Check again` | 置顶失败 / 取消置顶失败 / 重新检查 |
+| `Cloud repo` / `Cloud branch` / `Cloud session` | 云端仓库 / 云端分支 / 云端会话 |
+| `access forbidden: … is not available in your region Sign in to Cline again in Settings → Account, then try again.` | 无访问权限：… 在你所在的地区不可用 请在「设置 → 账户」中重新登录 Cline 后重试。 |
+
 ## [v1.0.1] — 2026-10-01
 
 修复「偶发控制台窗口一闪而过」+ 增强运行时错误的中文覆盖。
