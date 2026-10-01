@@ -40,11 +40,14 @@ ws.addEventListener('message', (ev) => {
 });
 const send = (method, params = {}) => new Promise((res) => { const i = ++id; pending.set(i, res); ws.send(JSON.stringify({ id: i, method, params })); });
 
-// ① 页面里已加载的 JS 资源（+ 常见 manifest 里的 chunk）
+// ① 页面里已加载的 JS 资源 + 预加载的 chunk + 主 bundle 里引用到的其它 chunk
 const listExpr = `(() => {
   const urls = performance.getEntriesByType('resource').map(r => r.name).filter(u => /\\.(js|mjs)(\\?|$)/.test(u));
-  const inline = [...document.querySelectorAll('script[src]')].map(s => s.src);
-  return JSON.stringify([...new Set([...urls, ...inline])]);
+  const scripts = [...document.querySelectorAll('script[src]')].map(s => s.src);
+  const preloads = [...document.querySelectorAll('link[href]')]
+    .filter(l => /modulepreload|preload/.test(l.rel || ''))
+    .map(l => l.href);
+  return JSON.stringify([...new Set([...urls, ...scripts, ...preloads])]);
 })()`;
 const listRes = await send('Runtime.evaluate', { expression: listExpr, returnByValue: true });
 let urls = JSON.parse(listRes.result.value || '[]');
@@ -65,6 +68,34 @@ for (let i = 0; i < urls.length; i += BATCH) {
 process.stdout.write('\n');
 const totalBytes = chunks.reduce((s, c) => s + (c.len || 0), 0);
 console.log(`抓取完成: ${chunks.length} 个文件，共 ${(totalBytes / 1024 / 1024).toFixed(1)} MB`);
+
+// ①.5 再从已抓到的 bundle 文本里挖出「引用到但还没加载」的 chunk 名，追加扫描一轮
+const extra = new Set();
+const CHUNK_RE = /["']([^"']{3,140}?\.js)["']/g;
+for (const c of chunks) {
+  if (!c.t) continue;
+  for (const m of c.t.matchAll(CHUNK_RE)) {
+    const p = m[1];
+    if (!/(\/|-|\.)/.test(p)) continue;
+    if (!/\.(js|mjs)$/.test(p)) continue;
+    const base = (() => { try { return new URL(c.u).href; } catch { return c.u; } })();
+    try {
+      const abs = new URL(p, base).href;
+      if (/^https?:/.test(abs) && !chunks.some((x) => x.u === abs)) extra.add(abs);
+    } catch { /* 忽略 */ }
+  }
+}
+const newOnes = [...extra].filter((u) => !chunks.some((c) => c.u === u));
+console.log(`从 bundle 里额外发现未加载的 chunk: ${newOnes.length} 个`);
+for (let i = 0; i < newOnes.length; i += BATCH) {
+  const batch = newOnes.slice(i, i + BATCH);
+  const expr = `(async () => { const urls = ${JSON.stringify(batch)}; const out = [];
+    for (const u of urls) { try { const t = await fetch(u).then(r => r.text()); out.push({ u, len: t.length, t }); } catch (e) { out.push({ u, len: 0, t: '' }); } }
+    return JSON.stringify(out); })()`;
+  const r = await send('Runtime.evaluate', { expression: expr, awaitPromise: true, returnByValue: true, timeout: 30000 });
+  try { chunks.push(...JSON.parse(r.result.value || '[]')); } catch { /* 忽略该批 */ }
+}
+console.log(`追加后累计: ${chunks.length} 个文件，${(chunks.reduce((s, c) => s + (c.len || 0), 0) / 1024 / 1024).toFixed(1)} MB`);
 ws.close();
 
 // ③ 抽取英文文案字面量 + 过滤噪声（只保留「像界面文案」的）

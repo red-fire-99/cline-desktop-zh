@@ -22,5 +22,9 @@
   "Something went wrong": "出错了",
   "upstream error": "上游服务出错",
   "Service Unavailable": "服务不可用",
-  "Only responses will be accepted": "该模型只接受对话回复，不支持工具调用"
+  "Only responses will be accepted": "该模型只接受对话回复，不支持工具调用",
+  "Show more in ": "在 ",
+  "rename to ": "重命名为 ",
+  "rename from ": "原名 ",
+  "Reset ": "重置 "
 }
