@@ -10,5 +10,8 @@
   "^Wrote (\\d+) files$": "写入了 $1 个文件",
   "^Thought for (\\d+)s$": "思考了 $1 秒",
   "^Launching browser\\.\\.\\.$": "正在启动浏览器...",
-  "^Running command\\.\\.\\.$": "正在执行命令..."
+  "^Running command\\.\\.\\.$": "正在执行命令...",
+  "^The run failed: Insufficient balance\\. Your Cline Credits balance is \\$([0-9.]+)$": "运行失败：余额不足。你的 Cline Credits 余额为 $$1",
+  "The run failed: JSON error injected into SSE stream": "运行失败：SSE 流中出现 JSON 错误",
+  "^The run failed:\\s*(.+)$": "运行失败：$1"
 }
