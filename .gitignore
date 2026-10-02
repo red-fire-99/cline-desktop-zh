@@ -21,3 +21,4 @@ Desktop.ini
 scripts/push-retry.ps1
 tools/_*.mjs
 push-with-proxy.ps1
+publish-v107.ps1

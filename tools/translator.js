@@ -11,6 +11,17 @@
   var ATTRS = ['placeholder', 'title', 'aria-label', 'alt', 'data-tooltip', 'data-placeholder'];
   var SKIP = { SCRIPT: 1, STYLE: 1, NOSCRIPT: 1, TEXTAREA: 1, CODE: 1, PRE: 1, KBD: 1 };
 
+  // 重复注入（词典热更新）时，先停掉上一轮的观察器与定时器。
+  // 否则每热更新一次就会多一个 MutationObserver + 一个 2.5s 定时器，
+  // 既会重复翻译，也会让全量遍历的耗时成倍增长（长会话下直接表现为卡顿）。
+  try {
+    if (window.__clineZh && window.__clineZh._mo) window.__clineZh._mo.disconnect();
+    if (window.__clineZh && window.__clineZh._timer) clearInterval(window.__clineZh._timer);
+  } catch (e) { /* 忽略 */ }
+
+  // 词典版本号：热更新后 +1，用来让节点缓存失效（新词条才能立刻生效）
+  var dictEpoch = (window.__clineZh && window.__clineZh._epoch) || 0;
+
   function getDict() { return window.__CLINE_ZH_DICT__ || {}; }
 
   // 词条命中: 先精确, 再尝试把连续空白折叠成一个空格 (React/JSX 换行渲染成多空白的情况)
@@ -101,9 +112,9 @@
     var raw = node.nodeValue;
     if (!raw) return;
     var seen = nodeSeen.get(node);
-    if (seen !== undefined && seen === raw) return;   // 内容未变 -> 跳过
+    if (seen !== undefined && seen.t === raw && seen.e === dictEpoch) return;   // 内容与词典都没变 -> 跳过
     var core = raw.trim();
-    if (!core) { nodeSeen.set(node, raw); return; }
+    if (!core) { nodeSeen.set(node, { t: raw, e: dictEpoch }); return; }
 
     // 「原文 / 译文」双向记录：只有元素恰好只有一个子节点时才记录，避免干扰复合控件。
     var el = node.parentElement;
@@ -165,7 +176,7 @@
       // 应用更新过的节点现在没有对应译文 -> 丢弃过时记录，下轮按新内容正常处理
       try { el.removeAttribute(SRC_ATTR); el.removeAttribute(OUT_ATTR); } catch (e) { /* 忽略 */ }
     }
-    nodeSeen.set(node, node.nodeValue);
+    nodeSeen.set(node, { t: node.nodeValue, e: dictEpoch });
   }
 
   function translateElement(el, dict) {
@@ -278,14 +289,30 @@
     lastWalkMs = now() - t0;
     if (lastWalkMs > 150) skipTicks = 1;
   }
-  setInterval(timedStart, 2500);
+  var timerId = null;
+  try { timerId = setInterval(timedStart, 2500); } catch (e) { /* 忽略 */ }
+
+  // 词典热更新入口: 换词典 -> 让节点缓存与正则/片段缓存失效 -> 立即重译一遍。
+  // （旧节点带着 data-zh-src 记录，会自动用原文重新翻译成新译文。）
+  function setDict(nextDict, nextFrag) {
+    if (nextDict) window.__CLINE_ZH_DICT__ = nextDict;
+    if (nextFrag) window.__CLINE_ZH_FRAG__ = nextFrag;
+    dictEpoch++;
+    reCacheSrc = null; reCache = null;
+    fragCacheSrc = null; fragCache = null;
+    fragReSrc = null; fragRe = null;
+    start();
+  }
 
   // 注意: 必须挂在最终对象上。之前先挂到 window.__clineZh、后面又整体覆盖，
   // 导致 stats() 实际丢失（读性能统计时拿到 undefined）。
   window.__clineZh = {
     version: 3,
     apply: start,
-    setDict: function () { start(); },
+    setDict: setDict,
+    _mo: mo,
+    _timer: timerId,
+    _epoch: dictEpoch,
     stats: function () {
       return {
         lastWalkMs: Math.round(lastWalkMs),

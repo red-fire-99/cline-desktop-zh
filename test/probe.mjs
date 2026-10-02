@@ -68,17 +68,18 @@ const guardExpr = `(() => {
   out.afterAppUpdate = el.textContent;
   out.okNoClobber = el.textContent === 'Cline Usage-Billing';
 
-  // 场景 2: 二次翻译仍然有效（词典更新后，已翻译的节点应升级为新译文）
+  // 场景 2: 二次翻译仍然有效（词典热更新后，已翻译的节点应升级为新译文）
+  // 用真实的 setDict() 热更新入口，和 apply-dict.mjs 走同一条路径
   const title = document.getElementById('title');
   const dict = window.__CLINE_ZH_DICT__;
-  const orig = dict['Settings'];
   const before = title.textContent;
-  dict['Settings'] = before + '-V2';
-  window.__clineZh.apply();
+  const next = Object.assign({}, dict);
+  next['Settings'] = before + '-V2';
+  window.__clineZh.setDict(next, window.__CLINE_ZH_FRAG__);
   out.retranslate = { before: before, after: title.textContent };
   out.okRetranslate = title.textContent === before + '-V2';
-  dict['Settings'] = orig;          // 还原，避免影响其它用例
-  window.__clineZh.apply();
+  window.__clineZh.setDict(dict, window.__CLINE_ZH_FRAG__);   // 还原
+  out.restored = title.textContent === before;
 
   // 场景 3: stats() 必须可用（v1.0.7 之前被整体覆盖导致丢失）
   out.hasStats = typeof window.__clineZh.stats === 'function';

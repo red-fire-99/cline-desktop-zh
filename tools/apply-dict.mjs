@@ -18,7 +18,23 @@ ws.addEventListener('message', (ev) => {
   if (m.id && pend.has(m.id)) { pend.get(m.id)(m.result); pend.delete(m.id); }
 });
 const send = (method, params = {}) => new Promise((res) => { pend.set(++id, res); ws.send(JSON.stringify({ id, method, params })); });
-const expr = `(() => { window.__clineZh = undefined; window.__CLINE_ZH_DICT__ = ${JSON.stringify(dict)}; window.__CLINE_ZH_FRAG__ = ${frags}; ${translator} ; return JSON.stringify({ ok: true, size: Object.keys(window.__CLINE_ZH_DICT__).length, fragSize: Object.keys(window.__CLINE_ZH_FRAG__).length }); })()`;
+// 优先走页内 setDict() 热更新（不重新注册观察器/定时器，节点缓存会自动失效）；
+// 只有页面里还没有新版翻译器时，才退回整段重新注入。
+const expr = `(() => {
+  const dict = ${JSON.stringify(dict)};
+  const frag = ${frags};
+  if (window.__clineZh && typeof window.__clineZh.setDict === 'function' && (window.__clineZh.version || 0) >= 3) {
+    window.__clineZh.setDict(dict, frag);
+    return JSON.stringify({ ok: true, mode: 'setDict', size: Object.keys(window.__CLINE_ZH_DICT__).length,
+      fragSize: Object.keys(window.__CLINE_ZH_FRAG__).length, stats: window.__clineZh.stats() });
+  }
+  window.__clineZh = undefined;
+  window.__CLINE_ZH_DICT__ = dict;
+  window.__CLINE_ZH_FRAG__ = frag;
+  ${translator}
+  return JSON.stringify({ ok: true, mode: 'reinject', size: Object.keys(window.__CLINE_ZH_DICT__).length,
+    fragSize: Object.keys(window.__CLINE_ZH_FRAG__).length });
+})()`;
 const r = await send('Runtime.evaluate', { expression: expr, returnByValue: true });
 console.log('热更新结果:', r.result.value);
 ws.close();
