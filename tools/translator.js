@@ -85,6 +85,10 @@
       var m = core.match(res[i][0]);
       if (m) {
         var rep = res[i][1].replace(/\$(\d)/g, function (_, g) { return m[+g] !== undefined ? m[+g] : ''; });
+        // 关键：替换结果里可能还嵌着未翻译的英文片段（典型如「兜底规则 + 错误详情」），
+        // 再过一遍片段词典，避免出现「只翻一半」。
+        var fragRep = applyFragments(rep);
+        if (fragRep) rep = fragRep;
         if (rep !== core) node.nodeValue = raw.replace(core, rep);
         return;
       }

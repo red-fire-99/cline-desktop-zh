@@ -155,5 +155,6 @@
   "Previous generated image": "上一张生成的图片",
   "Next generated image": "下一张生成的图片",
   "OpenAI batch failed.": "OpenAI 批量请求失败。",
-  "The socket connection was closed unexpectedly. For more information, pass verbose: true in the second argument to fetch()": "套接字连接意外中断。如需更多信息，请在 fetch() 的第二个参数中传入 verbose: true。"
+  "The socket connection was closed unexpectedly. For more information, pass verbose: true in the second argument to fetch()": "套接字连接意外中断。如需更多信息，请在 fetch() 的第二个参数中传入 verbose: true。",
+  "Hub connection closed (code=1006, reason=Connection ended)": "与 Hub 的连接已关闭（code=1006，原因：连接已结束）"
 }

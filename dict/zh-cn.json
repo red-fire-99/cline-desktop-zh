@@ -907,6 +907,7 @@
   "Howdy!": "你好！",
   "Huawei Cloud MaaS": "华为云 MaaS",
   "Huawei's model-as-a-service platform": "华为模型即服务平台",
+  "Hub connection closed (code=1006, reason=Connection ended)": "与 Hub 的连接已关闭（code=1006，原因：连接已结束）",
   "Hugging Face API Key": "Hugging Face API 密钥",
   "I can do all kinds of tasks thanks to breakthroughs in": "得益于",
   "I can even use MCP to create new tools and extend my own capabilities.": "我还可以通过 MCP 创建新工具并扩展自身能力。",

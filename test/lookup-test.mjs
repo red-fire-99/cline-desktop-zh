@@ -36,7 +36,12 @@ function lookup(text) {
   if (collapsed !== text && dict[collapsed] !== undefined) return dict[collapsed];
   for (const [re, rep] of regexes) {
     const m = text.match(re);
-    if (m) return rep.replace(/\$(\d)/g, (_, g) => (m[+g] !== undefined ? m[+g] : ''));
+    if (m) {
+      let out = rep.replace(/\$(\d)/g, (_, g) => (m[+g] !== undefined ? m[+g] : ''));
+      const fragRep = applyFragments(out);   // 与 translator.js 一致：替换结果再过一遍片段
+      if (fragRep) out = fragRep;
+      return out;
+    }
   }
   return applyFragments(text);   // 整条未命中 -> 片段替换
 }
@@ -46,7 +51,7 @@ const jsonDaily = 'The run failed: {"error":{"code":"INFERENCE_CAP_ERROR","messa
 const cases = [
   // 运行时错误：整条规则命中（JSON 额度耗尽）
   [jsonDaily,
-    '运行失败：{"error":{"code":"INFERENCE_CAP_ERROR","message":"模型 deepseek/deepseek-v4.1-flash 的每日免费额度已用尽，请在 23h 50m 后重试"}}'],
+    '运行失败：{"error":{"code":"INFERENCE_CAP_ERROR（推理额度或频率已达上限）","message":"模型 deepseek/deepseek-v4.1-flash 的每日免费额度已用尽，请在 23h 50m 后重试"}}'],
   // 运行时错误：余额不足（金额可变）
   ['The run failed: Insufficient balance. Your Cline Credits balance is $0.01',
     '运行失败：余额不足。你的 Cline Credits 余额为 $0.01'],
@@ -59,6 +64,14 @@ const cases = [
   ['The socket connection was closed unexpectedly. For more information, pass verbose: true in the second argument to fetch()',
     '套接字连接意外中断。如需更多信息，请在 fetch() 的第二个参数中传入 verbose: true。'],
   ['Request failed with ECONNRESET while streaming', 'Request failed with 连接被重置 while streaming'],
+  // WebSocket / Hub 连接关闭（code 与 reason 可变，靠片段翻译）
+  ['Hub connection closed (code=1006, reason=Connection ended)',
+    '与 Hub 的连接已关闭（code=1006，原因：连接已结束）'],
+  ['The run failed: Hub connection closed (code=1006, reason=Connection ended)',
+    '运行失败：与 Hub 的连接已关闭 (code=1006, reason=连接已结束)'],
+  // JSON 错误体：错误码加中文说明（保留原码便于复制/求助）
+  ['The run failed: {"error":{"code":"INFERENCE_CAP_ERROR","message":"Daily free limit reached on model x. Try again in 1h"}}',
+    '运行失败：{"error":{"code":"INFERENCE_CAP_ERROR（推理额度或频率已达上限）","message":"以下模型的每日免费额度已用尽：x. 请在 1h"}}'],
   // 已有词条回归
   ['Settings', '设置'],
   ['Read 7 files', '读取 7 个文件'],
