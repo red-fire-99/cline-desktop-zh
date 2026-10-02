@@ -14,9 +14,11 @@
   function getDict() { return window.__CLINE_ZH_DICT__ || {}; }
 
   // 词条命中: 先精确, 再尝试把连续空白折叠成一个空格 (React/JSX 换行渲染成多空白的情况)
+  // 性能: 只有确实含多空白时才做折叠，避免每个文本节点都跑一次正则替换
   function lookup(dict, core) {
     var t = dict[core];
     if (t !== undefined) return t;
+    if (!/\s\s|[\n\r\t]/.test(core)) return undefined;
     var collapsed = core.replace(/\s+/g, ' ');
     if (collapsed !== core) {
       t = dict[collapsed];
@@ -61,9 +63,23 @@
       .sort(function (a, b) { return b.length - a.length; });   // 长的片段优先，避免被短片段抢先
     return fragCache;
   }
-  function applyFragments(text) {
+  var fragRe = null, fragReSrc = null;
+  function escapeRe(s) { return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); }
+  function getFragRe() {
+    var f = window.__CLINE_ZH_FRAG__;
+    if (fragReSrc === f) return fragRe;
+    fragReSrc = f;
     var list = getFragments();
-    if (!list || !list.length || text.length < 12) return null;
+    if (!list || !list.length) { fragRe = null; return null; }
+    try { fragRe = new RegExp(list.map(escapeRe).join('|')); } catch (e) { fragRe = null; }
+    return fragRe;
+  }
+  function applyFragments(text) {
+    // 性能关键: 先用「合并成一条正则」做一次命中判断，没命中就直接返回。
+    // 否则每 1~2 秒的全量遍历会对每个文本节点逐条 indexOf 扫一遍整个片段词典，长会话下开销很大。
+    var re = getFragRe();
+    if (!re || text.length < 12 || !re.test(text)) return null;
+    var list = getFragments();
     var dict = window.__CLINE_ZH_FRAG__;
     var out = text, hit = false;
     for (var i = 0; i < list.length; i++) {
@@ -75,12 +91,18 @@
 
   var SRC_ATTR = 'data-zh-src';   // 记录译文对应的原文，便于词典更新后「二次翻译」
 
+  // 节点级缓存: 记录上次处理时的文本内容，内容没变就直接跳过。
+  // 长会话里绝大多数节点是静态的，这一项能砍掉绝大部分重复匹配开销。
+  var nodeSeen = new WeakMap();
+
   function translateTextNode(node, dict) {
     if (!node) return;
     var raw = node.nodeValue;
     if (!raw) return;
+    var seen = nodeSeen.get(node);
+    if (seen !== undefined && seen === raw) return;   // 内容未变 -> 跳过
     var core = raw.trim();
-    if (!core) return;
+    if (!core) { nodeSeen.set(node, raw); return; }
 
     // 若该元素曾记录过原文（上次翻译前的内容），优先用原文重新翻译：
     // 否则词典更新后，旧消息会永远停留在旧译文（只会被翻译一次）。
@@ -126,6 +148,7 @@
         if (el && el.childNodes.length === 1 && !fromOriginal) el.setAttribute(SRC_ATTR, core);
       } catch (e) { /* 忽略 */ }
     }
+    nodeSeen.set(node, node.nodeValue);
   }
 
   function translateElement(el, dict) {
@@ -226,8 +249,24 @@
     observeRoot();
     start();
   }
-  // 兜底: 每 1.2 秒全量补翻一次(词典未命中即跳过, 开销很小)
-  setInterval(start, 1200);
+  // 兜底: 周期性全量补翻。加自适应节流 —— 上一轮耗时过长就跳过一次，
+  // 避免长会话中持续占用主线程造成界面卡顿。
+  var lastWalkMs = 0;
+  var skipTicks = 0;
+  function timedStart() {
+    if (skipTicks > 0) { skipTicks--; return; }
+    var now = (window.performance && performance.now) ? function () { return performance.now(); } : function () { return Date.now(); };
+    var t0 = now();
+    start();
+    lastWalkMs = now() - t0;
+    if (lastWalkMs > 150) skipTicks = 1;
+  }
+  setInterval(timedStart, 2500);
+  try {
+    window.__clineZh && (window.__clineZh.stats = function () {
+      return { lastWalkMs: Math.round(lastWalkMs), dictSize: Object.keys(getDict()).length, fragCount: (getFragments() || []).length };
+    });
+  } catch (e) { /* 忽略 */ }
 
   window.__clineZh = {
     version: 2,

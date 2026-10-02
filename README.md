@@ -83,6 +83,7 @@ powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\setup.ps1
 | 重新合并词典 | `launcher\fetch-sources.cmd` → `launcher\rebuild-dict.cmd` |
 | 扫描还有哪些文案没翻 | `node tools\scan-ui-strings.mjs`（只读扫描应用前端，输出候选清单） |
 | 关闭后台注入器 | `launcher\stop-injector.cmd` |
+| 一键开 / 关汉化（不想重启 Cline 时） | `launcher\toggle-zh.cmd` |
 
 日志位置：`logs\injector.out.log` / `logs\injector.err.log`。
 

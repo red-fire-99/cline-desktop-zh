@@ -27,6 +27,32 @@ const expr = `(() => {
 const r = await send('Runtime.evaluate', { expression: expr, returnByValue: true });
 console.log(r.result.value);
 const o = JSON.parse(r.result.value);
+// 性能回归: 合成 2000 个文本节点，测量一次全量遍历耗时
+const perfExpr = `(() => {
+  const box = document.createElement('div');
+  box.id = 'zh-perf-probe';
+  const samples = ['Settings', 'Delete session', 'Run 3 commands', 'The run failed: rate limit exceeded',
+    'some random chat sentence that will never match anything at all', 'https://example.com/a/b/c'];
+  for (let i = 0; i < 2000; i++) {
+    const d = document.createElement('div');
+    d.textContent = samples[i % samples.length] + ' #' + i;
+    box.appendChild(d);
+  }
+  document.body.appendChild(box);
+  const t0 = performance.now();
+  window.__clineZh.apply();          // 首轮：需要真正翻译
+  const first = performance.now() - t0;
+  const t1 = performance.now();
+  window.__clineZh.apply();          // 二轮：内容未变，应被节点缓存跳过
+  const second = performance.now() - t1;
+  const stats = window.__clineZh.stats ? window.__clineZh.stats() : null;
+  box.remove();
+  return JSON.stringify({ firstMs: Math.round(first), cachedMs: Math.round(second), stats });
+})()`;
+const perfRes = await send('Runtime.evaluate', { expression: perfExpr, returnByValue: true });
+const perf = JSON.parse(perfRes.result.value || '{}');
+console.log(`\n性能回归: 2000 节点 -> 首轮 ${perf.firstMs}ms / 缓存轮 ${perf.cachedMs}ms`, perf.stats || '');
+
 const ok = o.injected && /[\u4e00-\u9fff]/.test(o.btn || '') && /[\u4e00-\u9fff]/.test(o.count || '') && /[\u4e00-\u9fff]/.test(o.ph || '') && /[\u4e00-\u9fff]/.test(o.dyn || '');
 // 输出 ASCII 判定标记：调用方（PowerShell）用纯 ASCII 匹配，避免中文编码问题导致误判
 console.log('VERIFY-RESULT: ' + (ok ? 'PASS' : 'FAIL'));
