@@ -73,29 +73,59 @@
     return hit ? out : null;
   }
 
+  var SRC_ATTR = 'data-zh-src';   // 记录译文对应的原文，便于词典更新后「二次翻译」
+
   function translateTextNode(node, dict) {
+    if (!node) return;
     var raw = node.nodeValue;
     if (!raw) return;
     var core = raw.trim();
     if (!core) return;
-    var t = lookup(dict, core);
-    if (t && t !== core) { node.nodeValue = raw.replace(core, t); return; }
-    var res = getRegexes();
-    for (var i = 0; i < res.length; i++) {
-      var m = core.match(res[i][0]);
-      if (m) {
-        var rep = res[i][1].replace(/\$(\d)/g, function (_, g) { return m[+g] !== undefined ? m[+g] : ''; });
-        // 关键：替换结果里可能还嵌着未翻译的英文片段（典型如「兜底规则 + 错误详情」），
-        // 再过一遍片段词典，避免出现「只翻一半」。
-        var fragRep = applyFragments(rep);
-        if (fragRep) rep = fragRep;
-        if (rep !== core) node.nodeValue = raw.replace(core, rep);
-        return;
+
+    // 若该元素曾记录过原文（上次翻译前的内容），优先用原文重新翻译：
+    // 否则词典更新后，旧消息会永远停留在旧译文（只会被翻译一次）。
+    var el = node.parentElement;
+    var fromOriginal = false;
+    try {
+      if (el && el.childNodes.length === 1) {
+        var saved = el.getAttribute(SRC_ATTR);
+        if (saved && saved !== core) { core = saved; fromOriginal = true; }
       }
+    } catch (e) { /* 忽略 */ }
+
+    var out = null;
+    var t = lookup(dict, core);
+    if (t && t !== core) {
+      out = t;
+    } else {
+      var res = getRegexes();
+      for (var i = 0; i < res.length; i++) {
+        var m = core.match(res[i][0]);
+        if (m) {
+          var rep = res[i][1].replace(/\$(\d)/g, function (_, g) { return m[+g] !== undefined ? m[+g] : ''; });
+          // 关键：替换结果里可能还嵌着未翻译的英文片段（典型如「兜底规则 + 错误详情」），
+          // 再过一遍片段词典，避免出现「只翻一半」。
+          var fragRep = applyFragments(rep);
+          if (fragRep) rep = fragRep;
+          if (rep !== core) out = rep;
+          break;
+        }
+      }
+      // 整条未命中 -> 片段级替换
+      if (out === null) out = applyFragments(core);
     }
-    // 整条未命中 -> 片段级替换
-    var frag = applyFragments(core);
-    if (frag) node.nodeValue = raw.replace(core, frag);
+
+    if (out && out !== raw) {
+      // 统一按「首尾空白 + 译文」整段替换：
+      // 走二次翻译路径时 raw 是旧译文、core 是原文，无法用 raw.replace(core, ...)
+      var lead = (raw.match(/^\s*/) || [''])[0];
+      var tail = (raw.match(/\s*$/) || [''])[0];
+      node.nodeValue = lead + out + tail;
+      // 记录原文（仅限「元素只有一个子节点」的安全场景）
+      try {
+        if (el && el.childNodes.length === 1 && !fromOriginal) el.setAttribute(SRC_ATTR, core);
+      } catch (e) { /* 忽略 */ }
+    }
   }
 
   function translateElement(el, dict) {
