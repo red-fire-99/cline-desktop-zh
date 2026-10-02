@@ -11,6 +11,9 @@
   <pre><code id="code">const settings = "Settings"; // 代码块不应被翻译</code></pre>
   <textarea id="ta" placeholder="Ask anything"></textarea>
   <div id="dyn"></div>
+  <!-- 回归场景: 模拟 Cline 底部「提供商/模型」下拉 —— 同一 DOM 节点先渲染占位标签，
+       拿到真实值后被应用改写。翻译器绝不能把真实值覆盖回标签。 -->
+  <span id="combo">Provider</span>
 </div>
 <script>
   // 动态插入 + 属性变更, 用于验证 MutationObserver 增量翻译

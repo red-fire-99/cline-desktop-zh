@@ -53,7 +53,46 @@ const perfRes = await send('Runtime.evaluate', { expression: perfExpr, returnByV
 const perf = JSON.parse(perfRes.result.value || '{}');
 console.log(`\n性能回归: 2000 节点 -> 首轮 ${perf.firstMs}ms / 缓存轮 ${perf.cachedMs}ms`, perf.stats || '');
 
-const ok = o.injected && /[\u4e00-\u9fff]/.test(o.btn || '') && /[\u4e00-\u9fff]/.test(o.count || '') && /[\u4e00-\u9fff]/.test(o.ph || '') && /[\u4e00-\u9fff]/.test(o.dyn || '');
+// ---- 回归: 不得覆盖「应用自己更新过的节点」 ----
+// 真实故障: 底部「提供商/模型」按钮复用同一 DOM 节点，先渲染占位标签 "Provider"，
+// 应用拿到真实值后改成 "Cline Usage-Billing"，二次翻译逻辑却用旧原文把它覆盖成「提供商」，
+// 且因为 React 虚拟 DOM 没变化，之后再也不会写回，界面永久看不到具体值。
+const guardExpr = `(() => {
+  const out = {};
+  const el = document.getElementById('combo');
+
+  // 场景 1: 应用改写节点内容 -> 翻译器必须放手
+  el.textContent = 'Cline Usage-Billing';
+  window.__clineZh.apply();
+  window.__clineZh.apply();          // 多跑两轮，确认不会反复覆盖
+  out.afterAppUpdate = el.textContent;
+  out.okNoClobber = el.textContent === 'Cline Usage-Billing';
+
+  // 场景 2: 二次翻译仍然有效（词典更新后，已翻译的节点应升级为新译文）
+  const title = document.getElementById('title');
+  const dict = window.__CLINE_ZH_DICT__;
+  const orig = dict['Settings'];
+  const before = title.textContent;
+  dict['Settings'] = before + '-V2';
+  window.__clineZh.apply();
+  out.retranslate = { before: before, after: title.textContent };
+  out.okRetranslate = title.textContent === before + '-V2';
+  dict['Settings'] = orig;          // 还原，避免影响其它用例
+  window.__clineZh.apply();
+
+  // 场景 3: stats() 必须可用（v1.0.7 之前被整体覆盖导致丢失）
+  out.hasStats = typeof window.__clineZh.stats === 'function';
+  out.stats = out.hasStats ? window.__clineZh.stats() : null;
+  return JSON.stringify(out);
+})()`;
+const guardRes = await send('Runtime.evaluate', { expression: guardExpr, returnByValue: true });
+const g = JSON.parse(guardRes.result.value || '{}');
+console.log(`\n回归: 应用改值后未被覆盖 = ${g.okNoClobber ? 'PASS' : 'FAIL'} (${JSON.stringify(g.afterAppUpdate)})`);
+console.log(`回归: 二次翻译仍生效     = ${g.okRetranslate ? 'PASS' : 'FAIL'} (${JSON.stringify(g.retranslate)})`);
+console.log(`回归: stats() 可用        = ${g.hasStats ? 'PASS' : 'FAIL'}`);
+
+const ok = o.injected && /[\u4e00-\u9fff]/.test(o.btn || '') && /[\u4e00-\u9fff]/.test(o.count || '') && /[\u4e00-\u9fff]/.test(o.ph || '') && /[\u4e00-\u9fff]/.test(o.dyn || '')
+  && g.okNoClobber && g.okRetranslate && g.hasStats;
 // 输出 ASCII 判定标记：调用方（PowerShell）用纯 ASCII 匹配，避免中文编码问题导致误判
 console.log('VERIFY-RESULT: ' + (ok ? 'PASS' : 'FAIL'));
 console.log(ok ? 'cline-zh.mjs 注入链验证通过 ✔' : 'cline-zh.mjs 注入链验证失败 ✘');

@@ -17,3 +17,7 @@ Thumbs.db
 Desktop.ini
 *.tmp
 *.bak
+# 本地运维脚本（不发布）
+scripts/push-retry.ps1
+tools/_*.mjs
+push-with-proxy.ps1

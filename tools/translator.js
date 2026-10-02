@@ -90,6 +90,7 @@
   }
 
   var SRC_ATTR = 'data-zh-src';   // 记录译文对应的原文，便于词典更新后「二次翻译」
+  var OUT_ATTR = 'data-zh-out';   // 记录我们实际写出的译文，用于判断节点是否被应用改过
 
   // 节点级缓存: 记录上次处理时的文本内容，内容没变就直接跳过。
   // 长会话里绝大多数节点是静态的，这一项能砍掉绝大部分重复匹配开销。
@@ -104,16 +105,25 @@
     var core = raw.trim();
     if (!core) { nodeSeen.set(node, raw); return; }
 
-    // 若该元素曾记录过原文（上次翻译前的内容），优先用原文重新翻译：
-    // 否则词典更新后，旧消息会永远停留在旧译文（只会被翻译一次）。
+    // 「原文 / 译文」双向记录：只有元素恰好只有一个子节点时才记录，避免干扰复合控件。
     var el = node.parentElement;
+    var single = !!(el && el.childNodes.length === 1);
+    var saved = null, lastOut = null;
+    if (single) {
+      try { saved = el.getAttribute(SRC_ATTR); lastOut = el.getAttribute(OUT_ATTR); } catch (e) { /* 忽略 */ }
+    }
+    // 旧版本只写 SRC_ATTR、没有译文记录，无法确认当前文本是否由我们写入 -> 清理掉，避免误伤。
+    if (single && saved && lastOut === null) {
+      try { el.removeAttribute(SRC_ATTR); saved = null; } catch (e) { /* 忽略 */ }
+    }
+    // 应用自己改过这个节点（内容与我们上次写出的译文不一致）——绝不能再用旧原文去覆盖它。
+    // 典型场景: Cline 底部「提供商 / 模型」按钮复用同一 DOM 节点，先渲染占位标签，
+    // 拿到真实值后改成 "Cline Usage-Billing"，若此时用旧原文重译会把真实值抹成「提供商」。
+    var appChanged = !!(saved && lastOut !== null && lastOut !== core);
+
+    // 若当前文本仍是我们上次写出的译文，说明译文可能过时，用原文重新翻译（支持词典热更新）。
     var fromOriginal = false;
-    try {
-      if (el && el.childNodes.length === 1) {
-        var saved = el.getAttribute(SRC_ATTR);
-        if (saved && saved !== core) { core = saved; fromOriginal = true; }
-      }
-    } catch (e) { /* 忽略 */ }
+    if (saved && !appChanged && lastOut === core) { core = saved; fromOriginal = true; }
 
     var out = null;
     var t = lookup(dict, core);
@@ -142,11 +152,18 @@
       // 走二次翻译路径时 raw 是旧译文、core 是原文，无法用 raw.replace(core, ...)
       var lead = (raw.match(/^\s*/) || [''])[0];
       var tail = (raw.match(/\s*$/) || [''])[0];
-      node.nodeValue = lead + out + tail;
-      // 记录原文（仅限「元素只有一个子节点」的安全场景）
+      var text = lead + out + tail;
+      node.nodeValue = text;
+      // 记录原文与译文（仅限「元素只有一个子节点」的安全场景）
       try {
-        if (el && el.childNodes.length === 1 && !fromOriginal) el.setAttribute(SRC_ATTR, core);
+        if (single && !fromOriginal) {
+          el.setAttribute(SRC_ATTR, core);
+          el.setAttribute(OUT_ATTR, text);
+        }
       } catch (e) { /* 忽略 */ }
+    } else if (single && appChanged) {
+      // 应用更新过的节点现在没有对应译文 -> 丢弃过时记录，下轮按新内容正常处理
+      try { el.removeAttribute(SRC_ATTR); el.removeAttribute(OUT_ATTR); } catch (e) { /* 忽略 */ }
     }
     nodeSeen.set(node, node.nodeValue);
   }
@@ -262,15 +279,20 @@
     if (lastWalkMs > 150) skipTicks = 1;
   }
   setInterval(timedStart, 2500);
-  try {
-    window.__clineZh && (window.__clineZh.stats = function () {
-      return { lastWalkMs: Math.round(lastWalkMs), dictSize: Object.keys(getDict()).length, fragCount: (getFragments() || []).length };
-    });
-  } catch (e) { /* 忽略 */ }
 
+  // 注意: 必须挂在最终对象上。之前先挂到 window.__clineZh、后面又整体覆盖，
+  // 导致 stats() 实际丢失（读性能统计时拿到 undefined）。
   window.__clineZh = {
-    version: 2,
+    version: 3,
     apply: start,
     setDict: function () { start(); },
+    stats: function () {
+      return {
+        lastWalkMs: Math.round(lastWalkMs),
+        dictSize: Object.keys(getDict()).length,
+        fragCount: (getFragments() || []).length,
+        tracked: document.querySelectorAll('[' + SRC_ATTR + ']').length
+      };
+    }
   };
 })();
