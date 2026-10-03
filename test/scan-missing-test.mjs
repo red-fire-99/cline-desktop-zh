@@ -3,8 +3,11 @@
  * 目标：真实漏翻文案必须被检出，产品名/域名/数字混排必须被排除。
  */
 import { readFileSync } from 'node:fs';
+import { resolve, dirname } from 'node:path';
+import { fileURLToPath } from 'node:url';
 
-const SRC = readFileSync('C:/Users/cuiyuxin/cline-desktop-zh/tools/scan-missing.mjs', 'utf8');
+const REPO = resolve(dirname(fileURLToPath(import.meta.url)), '..');
+const SRC = readFileSync(resolve(REPO, 'tools/scan-missing.mjs'), 'utf8');
 const body = SRC.match(/function looksLikeNoise\(text\)\s*\{([\s\S]*?)\n\}/)[1];
 const looksLikeNoise = new Function('text', body);
 
