@@ -56,10 +56,10 @@ const cases = [
   ['The run failed: Insufficient balance. Your Cline Credits balance is $0.01',
     '运行失败：余额不足。你的 Cline Credits 余额为 $0.01'],
   ['The run failed: JSON error injected into SSE stream', '运行失败：SSE 流中出现 JSON 错误'],
-  // 兜底规则：其余未知错误保留原文细节
-  ['The run failed: rate limit exceeded, retry in 30s', '运行失败：rate limit exceeded, retry in 30s'],
+  // 兜底规则：其余未知错误保留原文细节（已知词汇仍会按片段翻译）
+  ['The run failed: quota exhausted, retry in 30s', '运行失败：quota exhausted, retry in 30s'],
   // 片段替换：未知结构但含已知错误短语
-  ['Provider error: Rate limit exceeded, please retry later', 'Provider error: 超出速率限制, please retry later'],
+  ['Provider error: Rate limit exceeded, please retry later', 'Provider error: 超出速率限制, please 稍后重试'],
   // Node/undici fetch 网络错误（常被包在更长的文本里）
   ['The socket connection was closed unexpectedly. For more information, pass verbose: true in the second argument to fetch()',
     '套接字连接意外中断。如需更多信息，请在 fetch() 的第二个参数中传入 verbose: true。'],
