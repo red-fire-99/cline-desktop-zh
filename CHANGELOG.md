@@ -4,19 +4,33 @@
 
 ## [Unreleased]
 
-### 修复
+### 修复：补译运行时错误
 
-- 补译运行时错误 `Response stream ended without a finish reason.`（上游 API 流异常结束时抛出）。
-  该文案不在前端静态资源里，属运行时错误，因此词典原先无法覆盖。
-  新增 7 条整条词典 + 4 条片段词典，可覆盖带前后缀的组合形态，例如
-  `运行失败：Response stream ended without a finish reason.`、
-  `API Error: Response stream ended without a finish reason.`。
+本批修复针对**扫描前端资源无法覆盖**的一类错误 —— 它们由上游服务在运行时抛出，
+不在打包进前端的静态资源里，只能按需补充词典。
+
+1. `Response stream ended without a finish reason.`
+   上游 API 流异常结束时抛出。新增 7 条整条词典 + 4 条片段词典。
+
+2. `Capability owner client <id> disconnected before request was resolved.`
+   该文本**中间夹着随机会话 ID**（如 `core-fhr1462y-mus5iu6x`），整条词典永远匹配不上，
+   因此改用骨架片段 `Capability owner client`、`disconnected before request was resolved` 覆盖所有变体。
+
+3. 补充正则词条 `(?i)^the run failed:` / `(?i)^run failed:` / `(?i)^request failed:`，覆盖前缀大小写变体。
+
+词典规模：2241 -> **2251** 条整条词典，92 -> **102** 条片段词典。
 
 ### 验证
 
 - `node tools\validate.mjs` 全部通过
-- `node test\lookup-test.mjs` 全部通过（词典 2248 / 片段 96）
-- 真实 Cline 热更新实测：该报错已显示为「运行失败：响应流已结束，但未返回结束原因。」
+- `node test\lookup-test.mjs` 全部通过
+- 真实 Cline 热更新实测：
+  - `运行失败：响应流已结束，但未返回结束原因。`
+  - `运行失败：能力所有者客户端 core-xxx 在请求完成前已断开连接.`
+
+### 顺带清理
+
+- `scripts/publish-v1*.ps1` 含本机绝对路径，已加入 `.gitignore` 并移出版本库
 
 ## [v1.0.7] — 2026-10-02
 
