@@ -31,7 +31,7 @@ powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\setup.ps1
 
 
 - 🚀 **安装一步到位**：双击 `launcher\setup.cmd`，自动下载便携版 Node.js（不需要管理员权限、不写注册表）
-- 🌏 **词典 2097 条**（精确 2010 + 正则 87），由 4 个开源汉化项目的词典合并去重而来（见 [NOTICE.md](NOTICE.md)），并可用 `dict/overrides.json` 自行覆盖
+- 🌏 **词典 2251 条 + 片段 102 条**（精确 2158 + 正则 93），由 4 个开源汉化项目的词典合并去重而来（见 [NOTICE.md](NOTICE.md)），并可用 `dict/overrides.json` 自行覆盖
 - 🈶 **无黑框启动**：桌面快捷方式「Cline 中文版」双击即用
 - 🔁 **随时切回英文**：用原来的 Cline 图标启动就是英文原版
 - 🧩 **可自行扩充词典**：漏翻文案可一键抓取 → 热更新，无需重启

@@ -13,7 +13,7 @@
 
 Grab the latest archive from [Releases](../../releases):
 
-- `cline-desktop-zh-v*-slim.zip` — full source + dictionary (2097 entries), ~145 KB
+- `cline-desktop-zh-v*-slim.zip` — full source + dictionary (2251 entries + 102 fragments), ~174 KB
 
 **About Node.js**: the injector runs on Node.js. You do **not** need to install it — `launcher\setup.cmd`
 downloads a portable copy into the tool folder (nodejs.org, falling back to the npmmirror mirror), with no
@@ -27,7 +27,7 @@ Then unzip anywhere writable, double-click **`launcher\setup.cmd`**, and launch 
 
 - 🚀 **One-step install**: double-click `launcher\setup.cmd` — it downloads a portable Node.js
   (no admin rights, nothing written to the registry).
-- 🌏 **2097 dictionary entries** (2010 exact + 87 regex) merged from 4 open-source projects — see [NOTICE.md](NOTICE.md);
+- 🌏 **2251 dictionary entries + 102 fragments** (2158 exact + 93 regex) merged from 4 open-source projects — see [NOTICE.md](NOTICE.md);
   you can override any entry via `dict/overrides.json`.
 - 🈶 **Windowless launcher**: a “Cline 中文版” desktop shortcut (double-click and go).
 - 🔁 **Switch back anytime**: launching the original Cline icon still gives you the English UI.
