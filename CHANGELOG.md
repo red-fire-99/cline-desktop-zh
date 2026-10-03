@@ -2,6 +2,22 @@
 
 本项目遵循 [Semantic Versioning](https://semver.org/lang/zh-CN/)。
 
+## [Unreleased]
+
+### 修复
+
+- 补译运行时错误 `Response stream ended without a finish reason.`（上游 API 流异常结束时抛出）。
+  该文案不在前端静态资源里，属运行时错误，因此词典原先无法覆盖。
+  新增 7 条整条词典 + 4 条片段词典，可覆盖带前后缀的组合形态，例如
+  `运行失败：Response stream ended without a finish reason.`、
+  `API Error: Response stream ended without a finish reason.`。
+
+### 验证
+
+- `node tools\validate.mjs` 全部通过
+- `node test\lookup-test.mjs` 全部通过（词典 2248 / 片段 96）
+- 真实 Cline 热更新实测：该报错已显示为「运行失败：响应流已结束，但未返回结束原因。」
+
 ## [v1.0.7] — 2026-10-02
 
 **性能：解决长会话下 Cline 明显卡顿的问题。**
