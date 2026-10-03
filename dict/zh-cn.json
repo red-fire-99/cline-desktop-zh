@@ -2246,5 +2246,8 @@
   "Stream ended without a finish reason": "流已结束，但未返回结束原因。",
   "without a finish reason": "但未返回结束原因",
   "No finish reason received": "未收到结束原因",
-  "Missing finish reason in response": "响应中缺少结束原因"
+  "Missing finish reason in response": "响应中缺少结束原因",
+  "(?i)^the run failed:": "运行失败：",
+  "(?i)^run failed:": "运行失败：",
+  "(?i)^request failed:": "请求失败："
 }
