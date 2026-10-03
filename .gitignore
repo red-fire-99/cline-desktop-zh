@@ -9,6 +9,8 @@ _dev/
 *.err
 *.pid
 dict/build-stats.txt
+# 未汉化检测工具的中间产物（人工补译后并入 zh-cn.json）
+dict/missed.json
 
 # 编辑器 / 系统
 .vscode/

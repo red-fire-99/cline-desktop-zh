@@ -2249,5 +2249,7 @@
   "Missing finish reason in response": "响应中缺少结束原因",
   "(?i)^the run failed:": "运行失败：",
   "(?i)^run failed:": "运行失败：",
-  "(?i)^request failed:": "请求失败："
+  "(?i)^request failed:": "请求失败：",
+  "No teammate runs are currently in progress. Continue coordination using these updates.": "当前没有正在进行的队友任务运行。请使用这些更新继续协调。",
+  "System-delivered teammate async run updates:": "系统推送的队友异步运行更新："
 }

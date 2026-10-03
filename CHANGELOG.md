@@ -1,36 +1,53 @@
-# 更新记录
+﻿# 更新记录
 
 本项目遵循 [Semantic Versioning](https://semver.org/lang/zh-CN/)。
 
 ## [Unreleased]
 
-### 修复：补译运行时错误
+### 修复：运行时错误改为按「通用词汇」覆盖
 
-本批修复针对**扫描前端资源无法覆盖**的一类错误 —— 它们由上游服务在运行时抛出，
-不在打包进前端的静态资源里，只能按需补充词典。
+此前按**单条错误骨架**补词典（`finish reason`、`Capability owner client ...`），
+但上游错误措辞每次都在变 —— 同一条 429 这次是 `temporarily rate-limited upstream`，
+下次就变成 `Daily limit reached`，且夹带的会话 ID / 模型名每次都不同。逐条补词典永远追不上。
 
-1. `Response stream ended without a finish reason.`
-   上游 API 流异常结束时抛出。新增 7 条整条词典 + 4 条片段词典。
+改为补**可复用的英文词汇**，一次覆盖同类错误的所有未来变体：
 
-2. `Capability owner client <id> disconnected before request was resolved.`
-   该文本**中间夹着随机会话 ID**（如 `core-fhr1462y-mus5iu6x`），整条词典永远匹配不上，
-   因此改用骨架片段 `Capability owner client`、`disconnected before request was resolved` 覆盖所有变体。
+| 类别 | 覆盖的词汇 |
+| --- | --- |
+| 流式链路 | `Failed to create stream`、`inference request failed`、`failed to invoke model`、`with streaming` |
+| 状态码 | `request failed with status` |
+| 限流 | `rate-limited`、`Daily limit reached`、`Please retry shortly`、`Retry shortly` |
+| BYOK | `add your own key ...`、`add your own provider key`、`Add your own keys in`、`to get a boost` |
+| 字段名 | `limit_source`、`provider_error_code`、`remedy_hint`、`is_byok`、`user_id` |
+| 通用 HTTP | `Too Many Requests`、`Service Unavailable`、`Bad Gateway`、`insufficient_quota` 等 |
 
-3. 补充正则词条 `(?i)^the run failed:` / `(?i)^run failed:` / `(?i)^request failed:`，覆盖前缀大小写变体。
+片段词典：102 -> **153** 条；整条词典 2251 -> **2253** 条。
 
-词典规模：2241 -> **2251** 条整条词典，92 -> **102** 条片段词典。
+### 新增：未汉化自动检测工具
+
+`tools\scan-missing.mjs` —— 直接扫真实界面，把「像 UI 文案但没被翻译」的英文挑出来，
+作为补词典的候选。**把「用户遇到 → 截图反馈」变成「跑一次命令 → 拿到候选清单」。**
+
+```
+node tools\scan-missing.mjs            # 扫描并打印候选
+node tools\scan-missing.mjs --write    # 追加到 dict\missed.json 待人工填写
+```
+
+配套 `test\scan-missing-test.mjs`：过滤规则回归测试（13 条用例），
+确保真实漏翻文案能被检出、而产品名 / 域名 / 数字混排不会误报。
+
+本轮用它检出了 2 条此前遗漏的 UI 文案，已补入词典：
+`No teammate runs are currently in progress. Continue coordination using these updates.`、
+`System-delivered teammate async run updates:`
 
 ### 验证
 
 - `node tools\validate.mjs` 全部通过
 - `node test\lookup-test.mjs` 全部通过
-- 真实 Cline 热更新实测：
-  - `运行失败：响应流已结束，但未返回结束原因。`
-  - `运行失败：能力所有者客户端 core-xxx 在请求完成前已断开连接.`
-
-### 顺带清理
-
-- `scripts/publish-v1*.ps1` 含本机绝对路径，已加入 `.gitignore` 并移出版本库
+- `node test\scan-missing-test.mjs` 13/13 通过
+- `test\e2e.ps1` 端到端注入链验证通过
+- 真实界面复扫：**0 条未汉化**
+- 两个 429 错误变体实测均翻译完整，模型名 / URL / 随机 ID / 布尔值正确保留
 
 ## [v1.0.7] — 2026-10-02
 
