@@ -151,5 +151,13 @@
   "Bad Gateway": "网关错误",
   "Internal Server Error": "服务器内部错误",
   "temporarily unavailable": "暂时不可用",
-  "overloaded_error": "服务过载"
+  "overloaded_error": "服务过载",
+  "Provider returned an empty response": "服务商返回了空响应",
+  "returned an empty response": "返回了空响应",
+  "empty response": "空响应",
+  "The last check failed:": "上次检查失败：",
+  "error sending request for url": "发送请求失败",
+  "when your account doesn": "当你的账户尚未",
+  "has beta access yet": "获得测试版权限",
+  "still starts a fresh session": "仍会开启一个新会话"
 }
