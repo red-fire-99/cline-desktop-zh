@@ -2251,5 +2251,19 @@
   "(?i)^run failed:": "运行失败：",
   "(?i)^request failed:": "请求失败：",
   "No teammate runs are currently in progress. Continue coordination using these updates.": "当前没有正在进行的队友任务运行。请使用这些更新继续协调。",
-  "System-delivered teammate async run updates:": "系统推送的队友异步运行更新："
+  "System-delivered teammate async run updates:": "系统推送的队友异步运行更新：",
+  "Provider returned an empty response": "服务商返回了空响应",
+  "The provider returned an empty response": "服务商返回了空响应",
+  "Empty response from provider": "服务商返回空响应",
+  "Updates": "更新",
+  "Highlights": "亮点",
+  "A short tour of the biggest recent additions.": "快速了解最近的主要新增功能。",
+  "Show what's new": "查看新功能",
+  "Report an issue": "报告问题",
+  "Open GitHub issues": "打开 GitHub 问题",
+  "Release notes": "更新日志",
+  "Full changelog": "完整更新日志",
+  "Found a bug or have a request? Open an issue on GitHub.": "发现缺陷或有建议？欢迎在 GitHub 上提交 issue。",
+  "Not detected on this machine": "未在本机检测到",
+  "Release notes for": "更新日志："
 }

@@ -4,7 +4,43 @@
 
 ## [Unreleased]
 
-### 修复：运行时错误改为按「通用词汇」覆盖
+### 修复：设置页全量排查 + 运行时错误补充
+
+对设置页 7 个标签（通用 / 提供商 / 语音 / 导入 / 远程 / 账户 / 关于）逐页扫描后补齐漏翻：
+
+- **运行时错误**：`Provider returned an empty response` →「服务商返回了空响应」
+- **关于页稳定 UI**（每次更新不变，最值得翻）：
+  `Updates`、`Highlights`、`Show what's new`、`Report an issue`、
+  `Open GitHub issues`、`Release notes`、`Full changelog` 及其描述文案
+- **导入页**：`Not detected on this machine` →「未在本机检测到」
+
+词典规模：2253 -> **2267** 条整条词典，153 -> **161** 条片段词典。
+
+### 排查结论
+
+设置页真实漏翻已清零。扫描中剩余的候选经人工核对均为**不应翻译**的内容：
+
+| 内容 | 为什么不翻 |
+| --- | --- |
+| 提供商名称（OpenRouter、AWS Bedrock、Alibaba Qwen…） | 产品名 |
+| 模型标识符（`~anthropic/claude-fable-latest`） | 技术标识 |
+| 你的账号名、计费方式 | 用户数据 |
+
+### 已知问题：关于页更新日志中英夹杂
+
+`Release notes` 正文是官方英文更新日志，**每次 Cline 更新都会整段变化**。
+当前片段词典会翻译其中的零散词汇，导致出现
+`...clickable example prompt，并且 an Open Connectors button.` 这类中英夹杂，
+可读性反而低于纯英文。后续需决定是整段翻译还是该区域保持英文。
+
+### 验证
+
+- `node tools\validate.mjs` 全部通过
+- `node test\lookup-test.mjs` 全部通过
+- `node test\scan-missing-test.mjs` 13/13 通过
+- 真实界面截图确认：关于页的「更新 / 亮点 / 报告问题 / 更新日志」及按钮已全部汉化
+
+## [v1.0.9] — 2026-10-02
 
 此前按**单条错误骨架**补词典（`finish reason`、`Capability owner client ...`），
 但上游错误措辞每次都在变 —— 同一条 429 这次是 `temporarily rate-limited upstream`，
