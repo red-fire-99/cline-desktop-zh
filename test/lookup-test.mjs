@@ -56,6 +56,18 @@ const cases = [
   ['The run failed: Insufficient balance. Your Cline Credits balance is $0.01',
     '运行失败：余额不足。你的 Cline Credits 余额为 $0.01'],
   ['The run failed: JSON error injected into SSE stream', '运行失败：SSE 流中出现 JSON 错误'],
+  // 最大输出 Token 限制（模型在完成本轮回复前触顶）
+  ['The run failed: Model reached the maximum output token limit before completing the turn',
+    '运行失败：模型在完成本轮回复前已达到最大输出 Token 限制'],
+  ['Model reached the maximum output token limit before completing the turn',
+    '模型在完成本轮回复前已达到最大输出 Token 限制'],
+  // 同一组错误里的其它内置提示（来自 @cline/core 的运行时错误常量）
+  ['Your previous response was cut off because it reached the model\'s output-token limit before finishing.',
+    '上一次的回复因触及模型的输出 Token 上限而被截断。请让回复更简洁：每次只做一小步，避免长篇解释，大段文件或命令输出请拆成多次工具调用分批写入。'],
+  ['Model returned no content because the response was blocked by a content filter.',
+    '模型未返回任何内容，因为回复被内容过滤器拦截。重试通常无济于事，请尝试换一种说法。'],
+  ['The conversation exceeds the model\'s context window.',
+    '对话已超出模型的上下文窗口。请压缩对话、开启新会话，或换用上下文窗口更大的模型。'],
   // 兜底规则：其余未知错误保留原文细节（已知词汇仍会按片段翻译）
   ['The run failed: quota exhausted, retry in 30s', '运行失败：quota exhausted, retry in 30s'],
   // 片段替换：未知结构但含已知错误短语
