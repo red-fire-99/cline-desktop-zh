@@ -43,7 +43,9 @@ const RULES = [
   },
   {
     kind: '私钥',
-    re: /-----BEGIN (?:RSA |EC |OPENSSH |PGP )?PRIVATE KEY-----/g,
+    // 故意不把完整标记写进源码：否则本文件自己就会命中扫描规则，
+    // 也容易触发 GitHub 等平台的密钥扫描误报。用拼接构造。
+    re: new RegExp('-----BEGIN (?:RSA |EC |OPENSSH |PGP )?' + 'PRIVATE ' + 'KEY-----', 'g'),
     hint: '从仓库与历史中彻底移除，并更换对应密钥',
     mask: () => '-----BEGIN PRIVATE KEY-----',
   },
@@ -132,7 +134,9 @@ function shouldScan(rel) {
 
 function scanText(text, where) {
   if (!text || text.length > 8 * 1024 * 1024) return;
-  if (where.endsWith(SELF_FILE)) text = stripSelfRules(text);
+  // 扫描器自身源码里含规则正则字面量，会自我误报。
+  // where 可能是 "tools/privacy-audit.mjs" 或 "history:tools/privacy-audit.mjs@abc123"
+  if (/(^|:)tools\/privacy-audit\.mjs(@|$)/.test(where)) text = stripSelfRules(text);
   for (const rule of RULES) {
     rule.re.lastIndex = 0;
     let m;
