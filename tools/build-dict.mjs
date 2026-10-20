@@ -24,11 +24,12 @@
  *   - 正则词条: "^Pattern (\\d+)$": "中文 $1"   (key 以 ^ 开头即为正则源)
  *   - 不区分大小写: "(?i)^Pattern$": "中文"    (少数来源带 i 标记)
  *
- * 优先级(后者覆盖前者): 官方 i18n < JACK5920 < aaxianyu < Seventy73 < dict/overrides.json(本地覆盖)
+ * 优先级(后者覆盖前者): 官方 i18n < JACK5920 < aaxianyu < Seventy73 < dict/overrides.json < dict/manual.json
  * 用法: powershell -File scripts/fetch-sources.ps1  然后 node tools/build-dict.mjs
+ *       node tools/build-dict.mjs --out <文件>   输出到指定文件（用于测试，不动主词典）
  */
 import { readFileSync, writeFileSync, mkdirSync, existsSync } from 'node:fs';
-import { dirname, join } from 'node:path';
+import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -37,6 +38,12 @@ const REF = join(ROOT, 'vendor');
 const OUT_DIR = join(ROOT, 'dict');
 const OUT_FILE = join(OUT_DIR, 'zh-cn.json');
 const STATS_FILE = join(OUT_DIR, 'build-stats.txt');
+
+// --out <文件>：把结果写到别处（测试用），安全阀仍然对照主词典 dict/zh-cn.json
+const argv = process.argv.slice(2);
+const outIdx = argv.indexOf('--out');
+const WRITE_FILE = outIdx >= 0 && argv[outIdx + 1] ? resolve(argv[outIdx + 1]) : OUT_FILE;
+const WRITE_STATS = outIdx >= 0 ? WRITE_FILE + '.stats.txt' : STATS_FILE;
 
 const readJson = (p) => JSON.parse(readFileSync(p, 'utf8'));
 
@@ -175,6 +182,19 @@ function loadOverrides() {
   return out;
 }
 
+// ---------- 6) 手工词条（dict/manual.json，优先级仅次于 overrides） ----------
+// 手工词条 = 词典构建脚本无法从开源来源自动合并、但由人工维护的条目。
+// 单独存放在 manual.json，保证「重建词典」不会把它们冲掉（幂等）。
+function loadManual() {
+  const p = join(OUT_DIR, 'manual.json');
+  if (!existsSync(p)) return {};
+  const out = {};
+  for (const [k, v] of Object.entries(readJson(p))) {
+    if (typeof v === 'string') out[k] = v;
+  }
+  return out;
+}
+
 const official = loadOfficialI18n();
 const missing = [];
 if (!official.pairs) missing.push('vendor/i18n（官方 i18n 资源）');
@@ -198,6 +218,7 @@ const counts = {
   'aaxianyu/cline-desktop-chinese': mergeAll(loadAaXianYu(), 'aaxianyu'),
   'Seventy73-oss/cline-desktop-cn': mergeAll(loadSeventy73(), 'Seventy73'),
   '本地覆盖 (dict/overrides.json)': mergeAll(loadOverrides(), '本地覆盖'),
+  '手工词条 (dict/manual.json)': mergeAll(loadManual(), '手工词条'),
 };
 
 // 安全阀: 词条过少说明来源缺失或解析出错, 拒绝覆盖已有词典, 避免把词典写坏
@@ -208,7 +229,22 @@ if (totalMerged < 500) {
   process.exit(1);
 }
 
-mkdirSync(OUT_DIR, { recursive: true });
+// 安全阀2: 幂等性 —— 现有词典里的词条若在本次合并结果中消失, 说明有人手工改了
+// dict/zh-cn.json 而没同步到 dict/manual.json。此时中止, 避免把手工词条冲掉。
+if (existsSync(OUT_FILE)) {
+  let old = {};
+  try { old = readJson(OUT_FILE); } catch { old = {}; }
+  const dropped = Object.keys(old).filter((k) => !(k in merged));
+  if (dropped.length) {
+    console.error(`✘ 本次合并结果比现有词典少 ${dropped.length} 条，已中止，未覆盖 dict/zh-cn.json。`);
+    console.error('  这些词条不在任何来源词典中，多半是手工维护的。请把它们补进 dict/manual.json 后重试：');
+    for (const k of dropped.slice(0, 40)) console.error('  - ' + JSON.stringify(k));
+    if (dropped.length > 40) console.error(`  ... 其余 ${dropped.length - 40} 条省略`);
+    process.exit(1);
+  }
+}
+
+mkdirSync(dirname(WRITE_FILE), { recursive: true });
 // 排序规则：精确词条按字母序；正则词条按长度降序（长的、具体的规则先匹配），
 // 再按字母序兜底。这样「具体规则」总是排在「兜底规则」前面，不依赖字符编码顺序。
 const isRe = (k) => k.startsWith('^') || k.startsWith('(?i)');
@@ -219,13 +255,13 @@ for (const k of Object.keys(merged).sort((a, b) => {
   if (ra) return (b.length - a.length) || a.localeCompare(b);
   return a.localeCompare(b);
 })) sorted[k] = merged[k];
-writeFileSync(OUT_FILE, JSON.stringify(sorted, null, 2) + '\n', 'utf8');
+writeFileSync(WRITE_FILE, JSON.stringify(sorted, null, 2) + '\n', 'utf8');
 
 const total = Object.keys(sorted).length;
 const exact = Object.keys(sorted).filter((k) => !k.startsWith('^') && !k.startsWith('(?i)')).length;
 const lines = [
   `生成时间: ${new Date().toISOString()}`,
-  `输出: ${OUT_FILE}`,
+  `输出: ${WRITE_FILE}`,
   '',
   '各来源有效词条数(合并前):',
   ...Object.entries(counts).map(([k, v]) => `  - ${k}: ${v}`),
@@ -239,6 +275,6 @@ const lines = [
   '冲突示例(前 20 条; 最终取值优先级 本地覆盖 > Seventy73 > aaxianyu > JACK5920 > 官方 i18n):',
   ...[...conflicts.entries()].slice(0, 20).map(([k, v]) => `  "${k}" <- ${[...v].join(', ')}`),
 ];
-writeFileSync(STATS_FILE, lines.join('\n') + '\n', 'utf8');
+writeFileSync(WRITE_STATS, lines.join('\n') + '\n', 'utf8');
 console.log(lines.join('\n'));
 
