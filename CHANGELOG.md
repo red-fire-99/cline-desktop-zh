@@ -4,6 +4,59 @@
 
 ## [Unreleased]
 
+## [v1.0.11] — 2026-10-20
+
+### 修复：最大输出 Token 限制报错未翻译
+
+用户反馈运行时报 `Model reached the maximum output token limit before completing the turn` 显示英文。
+
+**根因**：目标英文文案不在词典中。`The run failed:` 前缀能命中，但后续原文无法命中，
+整条错误因此回落到英文。
+
+片段词典新增 14 条，覆盖 `@cline/core` 内置运行时错误的**整组文案**：
+
+| 类别 | 覆盖的文案 |
+| --- | --- |
+| 最大输出 Token 限制 | `Model reached the maximum output token limit before completing the turn` 等 |
+| 回复截断 | `Your previous response was cut off because it reached the model's output-token limit before finishing.` |
+| 内容过滤器 | `Model returned no content because the response was blocked by a content filter.` |
+| 上下文窗口超限 | `The conversation exceeds the model's context window.` 等 4 条 |
+
+效果：
+
+```
+The run failed: Model reached the maximum output token limit before completing the turn
+→ 运行失败：模型在完成本轮回复前已达到最大输出 Token 限制
+```
+
+### 改进：词典重建不再冲掉手工词条
+
+此前「重建词典」会把人工维护的词条一起冲掉，只能靠谨慎操作规避。本次：
+
+- 手工词条独立存放到 `dict/manual.json`，优先级仅低于 `dict/overrides.json`
+- 构建器新增**幂等安全阀**：合并结果若比现有主词典少词条，则拒绝覆盖并列出待补词条
+- 构建器新增 `--out` 参数（测试用，不动主词典）
+- 新增 `test/dict-build-test.mjs` 回归测试（11 项）
+
+### 改进：发布前隐私自查
+
+新增 `tools/privacy-audit.mjs`，扫描**工作区 + 完整 git 历史**，检测凭据泄漏、
+本机路径与用户名、个人信息、内网地址。已接入 CI。
+
+### 词典规模
+
+整条词典 2267 条（精确 2174 + 正则 93），片段词典 161 -> **175** 条。
+
+### 验证
+
+- `node tools\validate.mjs` 全部通过
+- `node test\lookup-test.mjs` 19/19 通过
+- `node test\dict-build-test.mjs` 全部通过
+- `node test\scan-missing-test.mjs` 13/13 通过
+- `node tools\privacy-audit.mjs` 无泄漏项
+
+## [v1.0.10] — 2026-10-03
+
 ### 修复：设置页全量排查 + 运行时错误补充
 
 对设置页 7 个标签（通用 / 提供商 / 语音 / 导入 / 远程 / 账户 / 关于）逐页扫描后补齐漏翻：

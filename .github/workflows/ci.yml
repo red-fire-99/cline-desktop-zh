@@ -17,4 +17,8 @@ jobs:
         run: node tools/validate.mjs
       - name: 校验 JSON 文件可解析
         run: |
-          node -e "for (const f of ['config.json','dict/zh-cn.json']) { JSON.parse(require('fs').readFileSync(f,'utf8')); console.log(f, 'OK'); }"
+          node -e "for (const f of ['config.json','dict/zh-cn.json','dict/fragments.json','dict/manual.json']) { JSON.parse(require('fs').readFileSync(f,'utf8')); console.log(f, 'OK'); }"
+      - name: 词典查表回归
+        run: node test/lookup-test.mjs
+      - name: 隐私自查（工作区）
+        run: node tools/privacy-audit.mjs --worktree
