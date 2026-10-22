@@ -7,13 +7,19 @@ $ErrorActionPreference = 'Stop'
 
 $REPO = 'red-fire-99/cline-desktop-zh'
 $TAG = 'v1.0.12-one-click'
-$ZIP = 'C:\Users\cuiyuxin\cline-desktop-zh\cline-desktop-zh-one-click.zip'
+# ZIP 放在本仓库根目录（用脚本自身位置推导，避免写死本机绝对路径）
+$ZIP = Join-Path (Split-Path -Parent $PSScriptRoot) 'cline-desktop-zh-one-click.zip'
 $API = "https://api.github.com/repos/$REPO"
 
 # ---------- 取凭据（仅内存） ----------
 $credIn = "$env:TEMP\zh-cred-rel.in"
 [System.IO.File]::WriteAllText($credIn, "protocol=https`nhost=github.com`n`n", (New-Object System.Text.UTF8Encoding($false)))
-$git = 'C:\Users\cuiyuxin\dev-tools\mingit\cmd\git.exe'
+# 优先用 PATH 里的 git；找不到再退回 GCM 自带的那份（避免写死本机绝对路径）
+$git = (Get-Command git -ErrorAction SilentlyContinue).Source
+if (-not $git) {
+  $git = Join-Path ${env:ProgramFiles} 'Git\cmd\git.exe'
+}
+if (-not (Test-Path $git)) { throw '找不到 git 可执行文件，请先安装 Git 或将其加入 PATH' }
 $credOut = "$env:TEMP\zh-cred-rel.out"
 Start-Process -FilePath $git -ArgumentList @('credential', 'fill') `
   -RedirectStandardInput $credIn -RedirectStandardOutput $credOut -RedirectStandardError "$credOut.err" `
