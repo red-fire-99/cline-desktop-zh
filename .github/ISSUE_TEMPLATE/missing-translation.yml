@@ -1,0 +1,53 @@
+name: 🈳 漏翻文案 / Missing Translation
+description: 报告界面上仍显示英文、但应该翻译成中文的文案
+title: "[漏翻] "
+labels: ["漏翻", "待确认"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        感谢反馈！请把**界面上看到的原文**完整贴在下面。最好附上**截图**或**页面 URL**，方便定位。
+        
+        > 💡 以下内容**不需要**翻译（会被自动过滤）：
+        > - 产品名/模型名/服务商名（如 DeepSeek、OpenAI、GPT、Nemotron、Cline 本身）
+        > - 技术标识符（BYOK、CLI、API、JSON、HTTP、SSH 等）
+        > - 文件路径、URL、代码片段、错误堆栈
+        > - 聊天内容、用户输入、代码块
+
+  - type: textarea
+    id: original-text
+    attributes:
+      label: 界面原文（必填）
+      description: 完整复制界面上显示的英文文案（含大小写、标点、空格）
+      placeholder: "Settings"
+    validations:
+      required: true
+
+  - type: textarea
+    id: suggested-translation
+    attributes:
+      label: 建议译文（选填）
+      description: 你觉得该怎么翻；不确定可留空，维护者会处理
+      placeholder: "设置"
+
+  - type: textarea
+    id: context
+    attributes:
+      label: 出现位置/上下文（选填）
+      description: 哪个页面、哪个弹窗、哪个下拉菜单；或直接贴截图链接
+      placeholder: "设置页 → 通用标签页 → 主题下拉框"
+
+  - type: input
+    id: cline-version
+    attributes:
+      label: Cline 版本
+      description: 可在 Cline 关于页查看
+      placeholder: "0.0.37"
+
+  - type: checkboxes
+    id: confirm
+    attributes:
+      label: 确认
+      options:
+        - label: 我确认这是界面 UI 文案，不是聊天内容/代码/路径/产品名
+          required: true

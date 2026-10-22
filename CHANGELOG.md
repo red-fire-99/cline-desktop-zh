@@ -4,6 +4,37 @@
 
 ## [Unreleased]
 
+## [v1.0.13] — 2026-10-22
+
+### 安全：修复隐私泄漏（P0）
+
+- **发布脚本不再硬编码本机绝对路径**（`scripts/publish-oneclick.ps1`）：原 `C:\Users\<用户名>\...` 改为动态推导，避免用户名泄漏到公开仓库。
+- **Git 历史清理**：已重写历史移除唯一泄漏提交（db70af6），并打标签备份。
+
+### 汉化质量（P1）
+
+- **技术标识保护机制**：`tools/translator.js` 新增 `KEEP_TERMS` 白名单（BYOK、CLI、API、SDK、MCP、JSON 等 80+ 项），片段替换前用占位符借出、替换后还原，彻底解决「中英夹杂/误伤」问题。
+- **补译真实漏翻**：片段词典新增 `Scroll to end`、`Transcript outline`、`Folder Cline`、MiniMax 免费期结束错误全文等 11 条，界面中文占比 95.8% → **98.0%**。
+- **运行时错误覆盖**：片段词典 +11 条，含 `free launch period`、`The :free variant has been retired` 等，完整翻译 OpenRouter 429/404 等结构化错误。
+
+### 工程化（P2）
+
+- **Issue/PR 模板**：`.github/ISSUE_TEMPLATE/missing-translation.yml`（漏翻专用）、`bug-report.yml`、`.github/PULL_REQUEST_TEMPLATE/pr-template.yml`，降低贡献门槛。
+- **CI 增强**：新增 `scan-missing-test.mjs`、`dict-build-test.mjs`、README 词条数一致性校验，禁止文档漂移。
+- **Release 自动化**：新增 `.github/workflows/release.yml`，打 tag → 自动打包 slim zip → 自动发 Release 并附 CHANGELOG 片段。
+
+### 词典规模
+
+整条词典 **2267 条**（精确 2174 + 正则 93），片段词典 **186 条**。
+
+### 验证
+
+- `node tools/validate.mjs` 全部通过
+- `node test/lookup-test.mjs` 19/19 通过
+- `node test/scan-missing-test.mjs` 13/13 通过
+- `node test/dict-build-test.mjs` 全部通过
+- `node tools/privacy-audit.mjs --worktree` 0 泄漏
+
 ## [v1.0.11] — 2026-10-20
 
 ### 修复：最大输出 Token 限制报错未翻译

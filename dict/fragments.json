@@ -173,5 +173,16 @@
   "error sending request for url": "发送请求失败",
   "when your account doesn": "当你的账户尚未",
   "has beta access yet": "获得测试版权限",
-  "still starts a fresh session": "仍会开启一个新会话"
+  "still starts a fresh session": "仍会开启一个新会话",
+  "free launch period": "免费试用期",
+  "ended on": "已于",
+  "The :free variant has been retired": "免费版变体已停用",
+  "use minimax/minimax-m3.1-flash instead": "请改用 minimax/minimax-m3.1-flash",
+  "list price:": "单价：",
+  "$0.15/M input": "输入 $0.15/M",
+  "$0.60/M output": "输出 $0.60/M",
+  "The free launch period for MiniMax M3.1 Flash ended on Oct 22, 2026. The :free variant has been retired; use minimax/minimax-m3.1-flash (list price: $0.15/M input, $0.60/M output) instead.": "MiniMax M3.1 Flash 的免费试用期已于 2026 年 10 月 22 日结束。免费版变体已停用；请改用 minimax/minimax-m3.1-flash（单价：输入 $0.15/M，输出 $0.60/M）。",
+  "Scroll to end": "滚动到底部",
+  "Transcript outline": "会话大纲",
+  "Folder Cline": "Cline 文件夹"
 }

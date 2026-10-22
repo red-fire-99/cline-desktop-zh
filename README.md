@@ -10,18 +10,28 @@
 
 ## 下载与安装
 
-**方式一：下载发行版压缩包（推荐）**
+### 方式一：一键汉化包（推荐，零代码基础亦可使用）
 
-1. 打开 [Releases](../../releases) 页面，下载 `cline-desktop-zh-v*-slim.zip`（约 145 KB，含全部代码与词典）
+1. 打开 [Releases](../../releases/latest) 页面，下载 **`cline-desktop-zh-one-click.zip`**（约 88 KB）
+2. 解压到任意可写目录（建议路径**不含中文**，避免个别老系统乱码）
+3. 双击 **`one-click-setup.ps1`** —— 自动检测 Cline、下载便携 Node.js（约 40MB，来自 nodejs.org，失败自动回退 npmmirror 镜像）、创建桌面/开始菜单的 **「Cline 中文版」** 快捷方式
+4. 以后双击桌面 **「Cline 中文版」** 快捷方式即可启动中文界面
+
+> 如果双击没反应：右键 `one-click-setup.ps1` →「使用 PowerShell 运行」。
+> 详细图文步骤见 [`one-click/README-ONE-CLICK.md`](one-click/README-ONE-CLICK.md)。
+
+### 方式二：完整发行包（开发者 / 想要全部工具）
+
+1. 打开 [Releases](../../releases) 页面，下载 `cline-desktop-zh-v*-slim.zip`（约 174 KB，含全部代码与词典）
 2. 解压到任意可写目录
-3. 双击 **`launcher\setup.cmd`** —— 自动下载便携 Node.js（约 40MB，来自 nodejs.org，失败自动回退 npmmirror 镜像）并创建桌面快捷方式
+3. 双击 **`launcher\setup.cmd`** —— 同样会自动下载便携 Node.js 并创建桌面快捷方式
 4. 桌面出现 **「Cline 中文版」** 快捷方式，双击即用中文界面启动 Cline
 
 > **需要 Node.js 吗？** 需要（用它运行注入器），但不必自己安装：`setup.cmd` 会下载便携版到本工具目录，
 > **不需要管理员权限、不写注册表**。若你的网络无法自动下载，也可手动下载
 > [Node.js LTS](https://nodejs.org/dist/) 的 `node-vXX-win-x64.zip`，解压后把里面的 `node` 文件夹放到本工具目录下即可离线使用。
 
-**方式二：从源码运行（开发者）**
+### 方式三：从源码运行（开发者）
 
 ```bash
 git clone https://github.com/red-fire-99/cline-desktop-zh.git
@@ -29,9 +39,11 @@ cd cline-desktop-zh
 powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\setup.ps1
 ```
 
+> 两种发行包都**不修改 Cline 官方任何文件**，只在运行时替换界面文案，所以官方自动更新不受影响；
+> 卸载时删掉文件夹和快捷方式即可，Cline 本体与数据完全无损。
 
-- 🚀 **安装一步到位**：双击 `launcher\setup.cmd`，自动下载便携版 Node.js（不需要管理员权限、不写注册表）
-- 🌏 **词典 2267 条 + 片段 175 条**（精确 2174 + 正则 93），由 4 个开源汉化项目的词典合并去重而来（见 [NOTICE.md](NOTICE.md)），并可用 `dict/overrides.json` 自行覆盖、`dict/manual.json` 维护手工词条
+- 🚀 **两种安装方式**：一键包（双击 `one-click-setup.ps1`）或完整包（双击 `launcher\setup.cmd`），都自动下载便携版 Node.js（不需要管理员权限、不写注册表）
+- 🌏 **词典 2267 条 + 片段 186 条**（精确 2174 + 正则 93），由 4 个开源汉化项目的词典合并去重而来（见 [NOTICE.md](NOTICE.md)），并可用 `dict/overrides.json` 自行覆盖、`dict/manual.json` 维护手工词条
 - 🈶 **无黑框启动**：桌面快捷方式「Cline 中文版」双击即用
 - 🔁 **随时切回英文**：用原来的 Cline 图标启动就是英文原版
 - 🧩 **可自行扩充词典**：漏翻文案可一键抓取 → 热更新，无需重启

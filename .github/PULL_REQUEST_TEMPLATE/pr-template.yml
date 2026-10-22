@@ -1,0 +1,59 @@
+name: 📝 Pull Request
+description: 贡献词典、代码或文档
+title: "[PR] "
+labels: ["PR"]
+body:
+  - type: checkboxes
+    id: type
+    attributes:
+      label: 变更类型
+      options:
+        - label: "🈳 补词典（dict/overrides.json、dict/fragments.json、dict/manual.json）"
+        - label: "🔧 代码修复/功能（tools/*.mjs、scripts/*.ps1、launcher/*.cmd）"
+        - label: "📚 文档更新（README、CHANGELOG、CONTRIBUTING）"
+        - label: "🧪 测试/工程化（CI、测试用例、发布脚本）"
+
+  - type: textarea
+    id: summary
+    attributes:
+      label: 变更摘要
+      description: 一句话概括做了什么、解决了什么问题
+      placeholder: "补译设置页漏翻 5 条文案；修复热更新时技术标识被误译的问题"
+    validations:
+      required: true
+
+  - type: textarea
+    id: details
+    attributes:
+      label: 详细说明
+      description: 如果是补词典，列出新增的 key/value；如果是代码改动，说明修改点与原因
+      placeholder: |
+        新增 overrides.json:
+        - "New Session": "新会话"
+        - "Settings": "设置"
+        
+        修复 tools/translator.js:
+        - applyFragments 现在会保护 BYOK、CLI 等技术标识符，防止中英夹杂
+
+  - type: checkboxes
+    id: checklist
+    attributes:
+      label: 提交前自检
+      options:
+        - label: "已跑 `node tools/validate.mjs` 全部通过"
+          required: true
+        - label: "已跑 `node test/lookup-test.mjs` 全部通过"
+          required: true
+        - label: "如改动注入器/启动器，已跑 `powershell -File test/e2e.ps1` 通过"
+        - label: "PowerShell 脚本无印刷引号 “ ”（用 「」或单引号）"
+          required: true
+        - label: "未提交 node/、vendor/、logs/、tools/out/、*.zip"
+          required: true
+        - label: "词典 key 无首尾空白、译文含中文、正则可编译"
+          required: true
+
+  - type: textarea
+    id: screenshots
+    attributes:
+      label: 截图/验证（选填）
+      description: 词典变更建议贴热更新前后的界面对比图

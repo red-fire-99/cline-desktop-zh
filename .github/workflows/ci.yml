@@ -20,5 +20,34 @@ jobs:
           node -e "for (const f of ['config.json','dict/zh-cn.json','dict/fragments.json','dict/manual.json']) { JSON.parse(require('fs').readFileSync(f,'utf8')); console.log(f, 'OK'); }"
       - name: 词典查表回归
         run: node test/lookup-test.mjs
+      - name: 漏翻检测过滤规则回归
+        run: node test/scan-missing-test.mjs
+      - name: 词典构建幂等性与安全阀回归
+        run: node test/dict-build-test.mjs
+      - name: README 词条数一致性校验
+        run: |
+          node -e "
+          const fs = require('fs');
+          const dict = JSON.parse(fs.readFileSync('dict/zh-cn.json', 'utf8'));
+          const total = Object.keys(dict).length;
+          const exact = Object.keys(dict).filter(k => !k.startsWith('^') && !k.startsWith('(?i)')).length;
+          const regex = total - exact;
+          const fragCount = Object.keys(JSON.parse(fs.readFileSync('dict/fragments.json', 'utf8'))).length;
+          const readme = fs.readFileSync('README.md', 'utf8');
+          const readmeEn = fs.readFileSync('README.en.md', 'utf8');
+          // 提取中文 README 里的数字：'词典 2267 条 + 片段 186 条'
+          const m1 = readme.match(/词典\\s*(\\d+)\\s*条.*?片段\\s*(\\d+)\\s*条/);
+          if (!m1) throw new Error('README.md 未找到词条数');
+          const [, rdTotal, rdFrag] = m1;
+          if (+rdTotal !== total) throw new Error(\`README.md 总词条数不一致: 文档 \${rdTotal} vs 实际 \${total}\`);
+          if (+rdFrag !== fragCount) throw new Error('README.md 片段数不一致');
+          // 英文 README
+          const m2 = readmeEn.match(/(\\d+)\\s+dictionary entries\\s*\\+\\s*(\\d+)\\s*fragments/);
+          if (!m2) throw new Error('README.en.md 未找到词条数');
+          const [, rdTotal2, rdFrag2] = m2;
+          if (+rdTotal2 !== total) throw new Error(\`README.en.md 总词条数不一致: 文档 \${rdTotal2} vs 实际 \${total}\`);
+          if (+rdFrag2 !== fragCount) throw new Error('README.en.md 片段数不一致');
+          console.log('✅ README 词条数一致:', total, '总计 (精确', exact, '+ 正则', regex, ') +', fragCount, '片段');
+          "
       - name: 隐私自查（工作区）
         run: node tools/privacy-audit.mjs --worktree

@@ -1,0 +1,61 @@
+name: 🐛 Bug 报告
+description: 报告汉化工具本身的问题（启动失败、注入失效、卡顿、热更新不生效等）
+title: "[Bug] "
+labels: ["Bug", "待确认"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        请尽量提供完整信息，方便复现。
+
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: 发生了什么
+      description: 简述现象（如：双击快捷方式没反应、界面仍是英文、控制台报错等）
+      placeholder: "双击「Cline 中文版」快捷方式后，Cline 启动但界面全是英文"
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: 复现步骤
+      description: 分步描述
+      placeholder: |
+        1. 完全退出 Cline
+        2. 双击桌面「Cline 中文版」快捷方式
+        3. 观察界面语言
+    validations:
+      required: true
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: 相关日志（必填）
+      description: 贴上 `logs/injector.log`、`logs/injector.err.log` 或浏览器控制台报错
+      render: shell
+      placeholder: |
+        [cline-zh] 词典已加载: 2267 条 ...
+        [cline-zh] 错误: ...
+
+  - type: input
+    id: cline-version
+    attributes:
+      label: Cline 版本
+      placeholder: "0.0.37"
+
+  - type: input
+    id: windows-version
+    attributes:
+      label: Windows 版本
+      placeholder: "Windows 11 23H2"
+
+  - type: dropdown
+    id: injector-mode
+    attributes:
+      label: 注入器模式
+      options:
+        - "正常运行（快捷方式启动）"
+        - "手动运行 node cline-zh.mjs run"
+        - "已运行的 Cline 直连 (node cline-zh.mjs run --exe ...)"
